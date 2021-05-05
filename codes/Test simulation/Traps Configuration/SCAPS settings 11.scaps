@@ -1,0 +1,344 @@
+> SCAPS 3.3.07 ELIS-UGent: Version scaps3307.exe, dated 27-01-2018, 15:11:02
+> SCAPS All SCAPS Settings file, saved on 	02-12-2020 at 17:37:58
+> problem definition file loaded :
+> c:\Users\karol\Desktop\Perovskite Group\Plotting\Task 6\traptest10.scaps
+> last saved: 	02-12-2020 at 17:30:56
+> 
+
+
+>> begin of problem definition file
+
+> SCAPS 3.3.07 ELIS-UGent: Version scaps3307.exe, dated 27-01-2018, 15:11:02 Problem definition file
+> last saved by SCAPS: 	02-12-2020 at 17:38:00
+> 
+> 
+> Comments (to be) included in the def file
+> Can be edited by the user
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+> > end of problem definition file
+> 
+convergence
+
+clamp_psi :  5.00e-01 units kT
+clamp_n :  5.00e-01 units kT
+clamp_p :  5.00e-01 units kT
+termination_psi :  1.00e-03 units kT
+termination_Fn :  1.00e-03 units kT
+termination_Fp :  1.00e-03 units kT
+termination_Meta_full :  1.00e-03 (rel.)
+maxmetaiter_full :   250
+clamp_meta :  1.00e-02 (rel.)
+usemetaclamping : 0
+maxiter :  1000
+defectdiscretisations :     7
+widthtail :  2.00e-02
+widthgauss :  6.00e+00
+QE calculation mode:  1 (0: cst. # of photons, 1: cst. incident power)
+number of photons :  3.00e+22
+incident power :  1.00e+00
+recalculate mesh :  1 (0: fixed mesh, 1: adaptive mesh)
+maximum mesh changes per iteration step :  10
+maximum ratio between neighbouring points :  1.60e+00
+minimum ratio between neighbouring points :  1.05e+00
+generation limit :  1.00e+00 microA/cm2
+recombination limit :  1.00e-03 microA/cm2
+Mott-Schottky analysis epsilon of layer number : -1
+Mott-Schottky analysis epsilon of sheet side :  0	(left side = -1; right side = +1)
+Mott-Schottky analysis number of points :  3	(3 or 5 as of december 2008)
+Mott-Schottky analysis polynomial order middle :  2	(1 or 2 as of december 2008)
+Mott-Schottky analysis polynomial order edges:  1	(1 or 2 as of december 2008)
+Mott-Schottky analysis defect number :  0
+Mott-Schottky analysis level number :  0
+Mott-Schottky analysis eh type :  1
+Mott-Schottky analysis constant epsilon :   10.00000000
+Mott-Schottky analysis epsilon(x) mode for NW :  0
+Mott-Schottky analysis smooth epsilon for NW :  0
+Include charge in defects in the calculation of the flatband condition :  1	(1=yes, 0=no)
+
+
+back contact
+
+flatband : 0 (1: flatband contact imposed; 0: fixed Phi_m value)
+recalculate : 0 (1 = do or 0 = do not recalculate phi_m to set flatband in each batch step)
+Fi_m :   3.6000 [eV]
+Sn :  1.000e+05 [m/s]
+Sp :  1.000e+05 [m/s]
+Tunneling to contact: 0
+Relative electron mass :   1.0000e+00
+Relative hole mass :   1.0000e+00
+
+layer
+
+name : ETL
+d : 2.000e-08 [m]
+Tunneling in layer: 0
+Relative electron mass :	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	 0	 0	[-]
+Relative hole mass :	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	 0	 0	[-]
+composition grading :	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	 0	 1	[-]
+v_th_n :	 1.000e+05	 1.000e+05	 1.000e+01	 1.000e+01	 1.000e+01	 1.000e+05	 1.000e+05	 1	 0	[m/s]
+v_th_p :	 1.000e+05	 1.000e+05	 1.000e+01	 1.000e+01	 1.000e+01	 1.000e+05	 1.000e+05	 1	 0	[m/s]
+eps :	    24.100000	    10.000000	    10.000000	    10.000000	    10.000000	    24.100000	    24.100000	 1	 0	[-]
+chi :	  3.600000	  4.500000	  1.000000	  1.000000	  1.000000	  3.600000	  3.600000	 1	 0	[eV]
+Eg :	  1.800000	  1.800000	  0.500000	  1.000000	  1.000000	  1.800000	  1.800000	 0	 0	[eV]
+Nc :	 1.000000e+24	 1.000000e+25	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e+24	 1.000000e+24	 1	 0	[/m^3]
+Nv :	 1.000000e+24	 1.000000e+25	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e+24	 1.000000e+24	 1	 0	[/m^3]
+mu_n :	 1.000000e-04	 5.000000e-03	 1.000000e-03	 1.000000e+00	 1.000000e+00	 1.000000e-04	 1.000000e-04	 1	 0	[m^2/Vs]
+mu_p :	 1.000000e-04	 5.000000e-03	 1.000000e-03	 1.000000e+00	 1.000000e+00	 1.000000e-04	 1.000000e-04	 1	 0	[m^2/Vs]
+K_rad :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 1	 0	[m^3/s]
+c_n_auger :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^6/s]
+c_p_auger :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^6/s]
+Na(uniform) :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 2	[/m^3]
+Nd(uniform) :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 2	[/m^3]
+absorption grading :	  688.88	  688.88	  250.00	  250.00	    0.00	    1.20	    1.20	 7	 0	[nm]
+absorptionmodel pure A material (y=0) : coefficients A and B (line inserted for compatibility with SCAPS until 3.3.06)
+A : 0.000e+00 [/(m*sqrt(eV))] (line inserted for compatibility with SCAPS until 3.3.06)
+B : 0.000e+00 [sqrt(eV)/m] (line inserted for compatibility with SCAPS until 3.3.06)
+absorptionmodel pure A material (y=0) : from model
+absorption pure B material (y=1), model : coefficients A and B (line inserted for compatibility with SCAPS until 3.3.06)
+pure B material (y=1), A : 0.000e+00 [/(m*sqrt(eV))] (line inserted for compatibility with SCAPS until 3.3.06)
+pure B material (y=1), B : 0.000e+00 [sqrt(eV)/m] (line inserted for compatibility with SCAPS until 3.3.06)
+absorptionmodel pure B material (y=1) : from model
+absorption model B, model : sqrt(hv-Eg) law (SCAPS traditional)
+absorption model B, value of parameter 1 :   0.000000e+00
+absorption model B, value of parameter 2 :   0.000000e+00
+
+interface properties
+
+interfacename : 
+Intraband tunneling : 0 (0: no tunneling, 1: with tunneling)
+Relative electron mass :  1.00
+Relative hole mass :  1.00
+
+
+layer
+
+name : AL
+d : 3.000e-07 [m]
+Tunneling in layer: 0
+Relative electron mass :	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	 0	 0	[-]
+Relative hole mass :	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	 0	 0	[-]
+composition grading :	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	 0	 1	[-]
+v_th_n :	 1.000e+05	 1.000e+05	 1.000e+01	 1.000e+01	 1.000e+01	 1.000e+05	 1.000e+05	 0	 0	[m/s]
+v_th_p :	 1.000e+05	 1.000e+05	 1.000e+01	 1.000e+01	 1.000e+01	 1.000e+05	 1.000e+05	 0	 0	[m/s]
+eps :	    24.100000	    10.000000	    10.000000	    10.000000	    10.000000	    24.100000	    24.100000	 1	 0	[-]
+chi :	  3.600000	  4.500000	  1.000000	  1.000000	  1.000000	  3.600000	  3.600000	 1	 0	[eV]
+Eg :	  1.600000	  1.600000	  0.500000	  1.000000	  1.000000	  1.600000	  1.600000	 0	 0	[eV]
+Nc :	 1.000000e+24	 1.000000e+25	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e+24	 1.000000e+24	 1	 0	[/m^3]
+Nv :	 1.000000e+24	 1.000000e+25	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e+24	 1.000000e+24	 1	 0	[/m^3]
+mu_n :	 1.000000e-04	 5.000000e-03	 1.000000e-03	 1.000000e+00	 1.000000e+00	 1.000000e-04	 1.000000e-04	 1	 0	[m^2/Vs]
+mu_p :	 1.000000e-04	 5.000000e-03	 1.000000e-03	 1.000000e+00	 1.000000e+00	 1.000000e-04	 1.000000e-04	 1	 0	[m^2/Vs]
+K_rad :	 1.000000e-18	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e-18	 1.000000e-18	 1	 0	[m^3/s]
+c_n_auger :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^6/s]
+c_p_auger :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^6/s]
+Na(uniform) :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 2	[/m^3]
+Nd(uniform) :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 2	[/m^3]
+absorption grading :	  774.99	  774.99	  250.00	  250.00	    0.00	    1.20	    1.20	 7	 0	[nm]
+absorptionmodel pure A material (y=0) : coefficients A and B (line inserted for compatibility with SCAPS until 3.3.06)
+A : 0.000e+00 [/(m*sqrt(eV))] (line inserted for compatibility with SCAPS until 3.3.06)
+B : 0.000e+00 [sqrt(eV)/m] (line inserted for compatibility with SCAPS until 3.3.06)
+absorptionmodel pure A material (y=0) : from model
+absorption pure B material (y=1), model : coefficients A and B (line inserted for compatibility with SCAPS until 3.3.06)
+pure B material (y=1), A : 0.000e+00 [/(m*sqrt(eV))] (line inserted for compatibility with SCAPS until 3.3.06)
+pure B material (y=1), B : 0.000e+00 [sqrt(eV)/m] (line inserted for compatibility with SCAPS until 3.3.06)
+absorptionmodel pure B material (y=1) : from model
+absorption model B, model : sqrt(hv-Eg) law (SCAPS traditional)
+absorption model B, value of parameter 1 :   0.000000e+00
+absorption model B, value of parameter 2 :   0.000000e+00
+
+srhrecombination
+
+type : donor ( 1 level(s) )
+energy distribution : single
+Reference for defect energy :  0 ; 0 = above EV (SCAPS<2.7); 1 = above Ei; 2 = below EC
+Ekar :  0.1000 [eV]
+Nt(uniform) :	 1.000000e+22	 1.000000e+20	 1.000000e+20	 1.000000e+00	 1.000000e+00	 1.000000e+22	 1.000000e+22	 0	 2	[/m^3]
+profile : homogenous
+Lkar : 1.000e+00 [m]
+Nleft : 1.000e+22 [/m^3]
+Nright : 1.000e+22 [/m^3]
+leveltype : +/0	
+sigma_n : 1.000e-18	[m^2]
+sigma_p : 1.000e-18	[m^2]
+Et :   0.100	[eV]
+
+interface properties
+
+interfacename : 
+Intraband tunneling : 0 (0: no tunneling, 1: with tunneling)
+Relative electron mass :  1.00
+Relative hole mass :  1.00
+
+
+layer
+
+name : HTL
+d : 2.000e-08 [m]
+Tunneling in layer: 0
+Relative electron mass :	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	 0	 0	[-]
+Relative hole mass :	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	  1.0000e+00	 0	 0	[-]
+composition grading :	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	  0.00000	 0	 1	[-]
+v_th_n :	 1.000e+05	 1.000e+05	 1.000e+01	 1.000e+01	 1.000e+01	 1.000e+05	 1.000e+05	 0	 0	[m/s]
+v_th_p :	 1.000e+05	 1.000e+05	 1.000e+01	 1.000e+01	 1.000e+01	 1.000e+05	 1.000e+05	 0	 0	[m/s]
+eps :	    24.100000	    10.000000	    10.000000	    10.000000	    10.000000	    24.100000	    24.100000	 1	 0	[-]
+chi :	  3.400000	  4.500000	  1.000000	  1.000000	  1.000000	  3.400000	  3.400000	 1	 0	[eV]
+Eg :	  1.800000	  1.800000	  0.500000	  1.000000	  1.000000	  1.800000	  1.800000	 0	 0	[eV]
+Nc :	 1.000000e+24	 1.000000e+25	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e+24	 1.000000e+24	 1	 0	[/m^3]
+Nv :	 1.000000e+24	 1.000000e+25	 1.000000e+01	 1.000000e+01	 1.000000e+01	 1.000000e+24	 1.000000e+24	 1	 0	[/m^3]
+mu_n :	 1.000000e-04	 5.000000e-03	 1.000000e-03	 1.000000e+00	 1.000000e+00	 1.000000e-04	 1.000000e-04	 1	 0	[m^2/Vs]
+mu_p :	 1.000000e-04	 5.000000e-03	 1.000000e-03	 1.000000e+00	 1.000000e+00	 1.000000e-04	 1.000000e-04	 1	 0	[m^2/Vs]
+K_rad :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^3/s]
+c_n_auger :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^6/s]
+c_p_auger :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 0	[m^6/s]
+Na(uniform) :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 2	[/m^3]
+Nd(uniform) :	 0.000000e+00	 0.000000e+00	 1.000000e+01	 1.000000e+01	 1.000000e+01	 0.000000e+00	 0.000000e+00	 0	 2	[/m^3]
+absorption grading :	  688.88	  688.88	  250.00	  250.00	    0.00	    1.20	    1.20	 7	 0	[nm]
+absorptionmodel pure A material (y=0) : coefficients A and B (line inserted for compatibility with SCAPS until 3.3.06)
+A : 0.000e+00 [/(m*sqrt(eV))] (line inserted for compatibility with SCAPS until 3.3.06)
+B : 0.000e+00 [sqrt(eV)/m] (line inserted for compatibility with SCAPS until 3.3.06)
+absorptionmodel pure A material (y=0) : from model
+absorption pure B material (y=1), model : coefficients A and B (line inserted for compatibility with SCAPS until 3.3.06)
+pure B material (y=1), A : 0.000e+00 [/(m*sqrt(eV))] (line inserted for compatibility with SCAPS until 3.3.06)
+pure B material (y=1), B : 0.000e+00 [sqrt(eV)/m] (line inserted for compatibility with SCAPS until 3.3.06)
+absorptionmodel pure B material (y=1) : from model
+absorption model B, model : sqrt(hv-Eg) law (SCAPS traditional)
+absorption model B, value of parameter 1 :   0.000000e+00
+absorption model B, value of parameter 2 :   0.000000e+00
+
+
+front contact
+
+flatband : 0 (1: flatband contact imposed; 0: fixed Phi_m value)
+recalculate : 0 (1 = do or 0 = do not recalculate phi_m to set flatband in each batch step)
+Fi_m :  5.20 [eV]
+Sn : 1.000e+05 [m/s]
+Sp : 1.000e+05 [m/s]
+Tunneling to contact: 0
+Relative electron mass :   1.0000e+00
+Relative hole mass :   1.0000e+00
+
+working point
+
+illuminated from : left
+internal Rfront :   0.00000000
+internal Tfront :  1.0000e+00
+voltage V applied to :  1 (+1: right contact; -1: left contact)
+cell reference system :  1 (1: as a consumer (consumed power = +VJ; 0: as a generator (generated power = +VJ) )
+
+>> end of problem definition file
+
+
+>> begin of action list file
+
+Temperature :   300.00 K
+Voltage :     0.0000 V
+Frequency :   1.0000e+06 Hz
+Number of points :   5
+dark :  0
+generation G(x) specified
+generation G(x) from model
+generation model :rectangular G(x) exponential tails
+generation model, value of parameter 1 :   1.250000000000e+17
+generation model, value of parameter 2 :   1.700000000000e-01
+generation model, value of parameter 3 :   3.000000000000e-01
+generation model, value of parameter 4 :   1.000000000000e-04
+spectrum cut off :  0
+short wavelength cut off :   200.00 nm
+long wavelength cut off :  4000.00 nm
+neutral density :     0.0000
+transmission :   100.0000 %
+attenuation :   100.0000 %
+Secondworkpoint Temperature :   300.00 K
+Secondworkpoint Voltage :     0.0000 V
+Secondworkpoint Number of points :   5
+Secondworkpoint dark :  1
+Secondworkpoint incident illumination specified
+Secondworkpoint incident spectrum from file :AM1_5G 1 sun.spe
+Secondworkpoint spectrum cut off :  0
+Secondworkpoint short wavelength cut off :     0.00 nm
+Secondworkpoint long wavelength cut off :  2000.00 nm
+Secondworkpoint neutral density :     0.0000
+Secondworkpoint transmission :   100.0000 %
+Secondworkpoint attenuation :   100.0000 %
+pause :  0
+IV_startV :     0.0000 V
+IV_stopV :     2.0000 V
+IV_points : 165
+IV_increment :     0.012195 V
+IV_calculate :  1
+stop after Voc :  1
+CV_startV :    -0.8000 V
+CV_stopV :     0.8000 V
+CV_points :  81
+CV_increment :     0.020000 V
+CV_calculate :  0
+MIS CV_calculate :  0
+Cf_startf :    1.000e+02 Hz
+Cf_stopf :    1.000e+06 Hz
+Cf_total points :  21
+Cf_points per decade :   5
+Cf_calculate :  0
+QE_startlambda :   300.00 nm
+QE_stoplambda :   900.00 nm
+QE_points :  61
+QE_increment :    10.00 nm
+QE_calculate :  0
+
+>> end of action list file
+
+
+>> begin of batch settings file
+
+batch display mode = not suppressed
+
+>> end of batch settings file
+
+
+>> begin of recorder settings file
+
+
+>> end of recorder settings file
+
+
+>> begin of curve fitting settings file
+
+Max number of steps whilst curve fitting :   25
+Max step size whilst curve fitting :   1.00000000e-01
+Stop criterion for step size :   1.00000000e-10
+Stop criterion for Chi square :   1.00000000e-07
+
+>> end of curve fitting settings file
+
+
+>> begin of general SCAPS settings file
+
+
+handling of error messages :  0 ; 0=to screen and wait for ackowledgement; 1=append to log file; 2=overwrite log file
+output list after a convergence error :  0 ; 0=truncate; 1=fill with zero's; 2=fill with white space
+maximum voltage for the recording of solar cell characteristics (V) :     2.000000
+minimum voltage increment for the recording of solar cell characteristics (V) :   0.02000000
+number of energy levels in a distribution :  7 (a defect band is discretised into  separate single levels)
+width of tail-like energy distribution (multiple of Echar) :   2.0000 (a defect band is discretised into  separate single levels)
+width of gaussian energy distribution (multiple of Echar) :   6.0000 (a defect band is discretised into  separate single levels)
+
+>> end of general SCAPS settings file
