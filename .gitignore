@@ -1,0 +1,12 @@
+# text files
+*.dat
+*.txt
+*.jpg
+*.pdf
+*.o
+/__pycache__
+/codes/Simulation_program
+
+# Exceptions
+!*/device_parameters.txt
+!*/Docs
