@@ -22,11 +22,11 @@ from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,zimt_Voltage_tran
 from tVG_gen import zimt_TPV
 
 # Main Program
-def main():    
+def TPV():    
     # General Inputs
     warnings.filterwarnings("ignore")   # Don't show warnings
     system = platform.system()                  # Operating system
-    max_jobs = 100                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    max_jobs = os.cpu_count()-2                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
     if system == 'Windows':             # cannot easily do multiprocessing in Windows
             max_jobs = 1
             slash = '/'
@@ -38,7 +38,7 @@ def main():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'ZimT043_BETA'+slash                      # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
@@ -101,7 +101,7 @@ def main():
             idx = 0
             for Gen in Gens:
                 data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_TPV_G_{:.1e}_G0_{:.2f}.dat'.format(Gen,G0),delim_whitespace=True)
-                zimt_Voltage_transient_plot(num_fig_tjs,data_tj,y=['Vdev'],xlimits=[-1e-4,1e-3],colors=colors[idx],plot_type=0,save_yes=True,pic_save_name = curr_dir+slash+path2ZimT+Store_folder+'transient.jpg') 
+                zimt_Voltage_transient_plot(num_fig_tjs,data_tj,y=['Vext'],xlimits=[-1e-4,1e-3],colors=colors[idx],plot_type=0,save_yes=True,pic_save_name = curr_dir+slash+path2ZimT+Store_folder+'transient.jpg') 
                 idx = idx + 1
 
         
@@ -120,4 +120,4 @@ def main():
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 
 if __name__ == '__main__':
-    main()
+    TPV()

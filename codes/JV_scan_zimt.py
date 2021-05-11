@@ -46,7 +46,7 @@ def JV_scan(str2run=[''],Gens=[0],num_fig=0,path2ZimT='',Store_folder=''):
     # General Inputs
     warnings.filterwarnings("ignore")   # Don't show warnings
     system = platform.system()                  # Operating system
-    max_jobs = 1                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    max_jobs = os.cpu_count()-2                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
     if system == 'Windows':             # cannot easily do multiprocessing in Windows
             max_jobs = 1
             slash = '/'
@@ -60,7 +60,7 @@ def JV_scan(str2run=[''],Gens=[0],num_fig=0,path2ZimT='',Store_folder=''):
     curr_dir = os.getcwd()                                      # Current working directory
     path2ZimT = path2ZimT+slash                                 # Path to ZimT in curr_dir
     Store_folder = Store_folder+slash                           # Path to folder containing output data in curr_dir
-    run_simu = False                                            # Rerun simu?  
+    run_simu = True                                            # Rerun simu?  
     move_ouput_2_folder = True                                  # Move (True) output of simulation to Store_folder
     clean_output = False                                        # Clean output after simulation (delete files)
 
@@ -148,7 +148,7 @@ def JV_scan(str2run=[''],Gens=[0],num_fig=0,path2ZimT='',Store_folder=''):
 
 if __name__ == '__main__':
 
-    JV_scan(str2run=['-L 120e-9'],Gens=[0,1e28],num_fig=0,path2ZimT = 'Simulation_program/ZimT043_BETA',Store_folder='test_output_JV_scan')
+    JV_scan(str2run=['-L 140e-9'],Gens=[0,1e28],num_fig=0,path2ZimT = 'Simulation_program/DDSuite_v400/ZimT',Store_folder='test_output_JV_scan')
 
     
     

@@ -22,11 +22,11 @@ from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,Store_output_in_f
 from tVG_gen import zimt_CELIV
 
 # Main Program
-def main():    
+def CELIV():    
     # General Inputs
     warnings.filterwarnings("ignore")   # Don't show warnings
     system = platform.system()                  # Operating system
-    max_jobs = 100                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    max_jobs = os.cpu_count()-2                       # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
     if system == 'Windows':             # cannot easily do multiprocessing in Windows
             max_jobs = 1
             slash = '/'
@@ -38,19 +38,21 @@ def main():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'ZimT043_BETA'+slash                      # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
 
     # Simulation input
-    run_simu = False                                        # Rerun simu?
+    run_simu = True                                        # Rerun simu?
     plot_tjs = True                                        # make plot ?
     plot_output = False
     move_ouput_2_folder = True
     Store_folder = 'CELIV'+slash
     clean_output = False
     L = 140e-9                                                  # Device thickness (m)
+    L_LTL = 20e-9                                                  # Left TL thickness (m)
+    L_RTL = 20e-9                                                  # Right TL thickness (m)
     Gens = [0,1e30]                                               # Max generation rate for the gaussian laser pulse
     slopes =[-1/1e-6]
     Voffsets =[0]
@@ -75,7 +77,7 @@ def main():
             for slope in slopes:
                 for Voffset in Voffsets:
                     zimt_CELIV(1e-8,3e-6,Voffset,slope,1e-6,Gen,tpulse,1e-7,0,width_pulse = 6e-9,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
-                    str_lst.append('-L '+str(L)+' -tVG_file tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt -tj_file tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset,Gen,slope,Voffset))
+                    str_lst.append('-L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -tVG_file tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt -tj_file tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset,Gen,slope,Voffset))
                     sys_lst.append(system)
                     path_lst.append(curr_dir+slash+path2ZimT)
                     tVG_lst.append('tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
@@ -128,7 +130,7 @@ def main():
     
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 if __name__ == '__main__':
-    main()
+    CELIV()
     
     
     

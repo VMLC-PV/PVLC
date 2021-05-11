@@ -478,8 +478,8 @@ def get_complex_impedance(df,f):
     """    
 
     ampli_Va, freq_Va, phi_Va, offset_Va = fit_sin_func(np.asarray(df['t']),np.asarray(df['Va']),f)
-    ampli_Vdev, freq_Vdev, phi_Vdev, offset_Vdev = fit_sin_func(np.asarray(df['t']),np.asarray(df['Vdev']),f)
-    ampli_Jdev, freq_Jdev, phi_Jdev, offset_Jdev = fit_sin_func(np.asarray(df['t']),np.asarray(df['Jdev']),f)
+    ampli_Vdev, freq_Vdev, phi_Vdev, offset_Vdev = fit_sin_func(np.asarray(df['t']),np.asarray(df['Vext']),f)
+    ampli_Jdev, freq_Jdev, phi_Jdev, offset_Jdev = fit_sin_func(np.asarray(df['t']),np.asarray(df['Jext']),f)
     phi = phi_Jdev - (phi_Vdev - phi_Va)
 
     return (ampli_Vdev/ampli_Jdev)*complex(np.cos(-phi),np.sin(-phi)) 
@@ -754,7 +754,7 @@ def SIMsalabim_dens_plot(num_fig,data_Var,y=['n','p'],xlimits=[],ylimits=[],plot
 ###################### Plot function ZimT ###########################
 #####################################################################
 
-def zimt_tj_plot(num_fig,data_tj,x='t',y=['Jdev'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,save_yes=False,pic_save_name='transient.jpg'):
+def zimt_tj_plot(num_fig,data_tj,x='t',y=['Jext'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,save_yes=False,pic_save_name='transient.jpg'):
     """ Make tj_file transient plot for ZimT  
     Default time on the x axis in $\mu$s
     
@@ -767,7 +767,7 @@ def zimt_tj_plot(num_fig,data_tj,x='t',y=['Jdev'],xlimits=[],ylimits=[],plot_typ
     x : str, optional
         xaxis data, by default 't'
     y : list of str, optional
-        yaxis data can be multiple like ['Jdev','Jncat'], by default ['Jdev']
+        yaxis data can be multiple like ['Jext','Jncat'], by default ['Jext']
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
     ylimits : list, optional
@@ -827,7 +827,7 @@ def zimt_tj_plot(num_fig,data_tj,x='t',y=['Jdev'],xlimits=[],ylimits=[],plot_typ
     if save_yes:
         plt.savefig(pic_save_name,dpi=300,transparent=True)
 
-def zimt_tj_JV_plot(num_fig,data_tj,x='Vext',y=['Jdev'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,save_yes='False',pic_save_name='transient_JV.jpg'):
+def zimt_tj_JV_plot(num_fig,data_tj,x='Vext',y=['Jext'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,save_yes='False',pic_save_name='transient_JV.jpg'):
     """ Make tj_file transient current-voltage curve plot for ZimT  
     Default Voltage on the x axis 
     
@@ -840,7 +840,7 @@ def zimt_tj_JV_plot(num_fig,data_tj,x='Vext',y=['Jdev'],xlimits=[],ylimits=[],pl
     x : str, optional
         xaxis data, by default 'Va'
     y : list of str, optional
-        yaxis data can be multiple like ['Jdev','Jncat'], by default ['Jdev']
+        yaxis data can be multiple like ['Jext','Jncat'], by default ['Jext']
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
     ylimits : list, optional
@@ -901,7 +901,7 @@ def zimt_tj_JV_plot(num_fig,data_tj,x='Vext',y=['Jdev'],xlimits=[],ylimits=[],pl
         plt.savefig(pic_save_name,dpi=300,transparent=True)
 
 
-def zimt_Voltage_transient_plot(num_fig,data_tj,x='t',y=['Vdev'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,save_yes=False,pic_save_name='transient_volt.jpg'):
+def zimt_Voltage_transient_plot(num_fig,data_tj,x='t',y=['Vext'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,save_yes=False,pic_save_name='transient_volt.jpg'):
     """ Make tj_file transientvoltage curve plot for ZimT  
     Default time on the x axis in $\mu$s
     
@@ -914,7 +914,7 @@ def zimt_Voltage_transient_plot(num_fig,data_tj,x='t',y=['Vdev'],xlimits=[],ylim
     x : str, optional
         xaxis data, by default 't'
     y : list of str, optional
-        yaxis data can be multiple like ['Vdev','Va'], by default ['Vdev']
+        yaxis data can be multiple like ['Vext','Va'], by default ['Vext']
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
     ylimits : list, optional

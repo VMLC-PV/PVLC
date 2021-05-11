@@ -22,8 +22,8 @@ import warnings
 warnings.filterwarnings("ignore")
 # Homemade package import
 import plot_settings_screen
-from VLC_useful_func_test import sci_notation,run_zimt,zimt_tj_plot,TDCF_fit,Store_output_in_folder,clean_up_output
-from tVG_gen_test import zimt_tdcf
+from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,TDCF_fit,Store_output_in_folder,clean_up_output
+from tVG_gen import zimt_tdcf
 
 # Main Program
 def TDCF(L,num_fig,str2run='',path2ZimT='',Store_folder=''):
@@ -65,7 +65,7 @@ def TDCF(L,num_fig,str2run='',path2ZimT='',Store_folder=''):
     curr_dir = os.getcwd()                                      # Current working directory
     path2ZimT = path2ZimT+slash                                 # Path to ZimT in curr_dir
     Store_folder = Store_folder+slash                           # Path to folder containing output data in curr_dir
-    run_simu = False                                            # Rerun simu?  
+    run_simu = True                                            # Rerun simu?  
     move_ouput_2_folder = True                                  # Move (True) output of simulation to Store_folder
     clean_output = False                                        # Clean output after simulation (delete files)
     make_fit = False                                            # Make fit dn/dt
@@ -85,7 +85,7 @@ def TDCF(L,num_fig,str2run='',path2ZimT='',Store_folder=''):
     delays = [6e-9]                                             # Delays for TDCF simulation
     width_pulse = 6e-9
     time_exp = True
-    steps = 300
+    steps = 100
 
     ## Figures control
     size_fig = (20, 14)
@@ -187,7 +187,7 @@ def TDCF(L,num_fig,str2run='',path2ZimT='',Store_folder=''):
             ax2 = ax1.twinx()
             for i in tVG_Gen_lst:
                 VG_file = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+i,delim_whitespace=True)
-                ax1.semilogx(VG_file['t'],VG_file['G'])
+                ax1.semilogx(VG_file['t'],VG_file['Gehp'])
                 ax2.semilogx(VG_file['t'],VG_file['V'],'--')
     for Vpre in Vpres:
         for tdelay in delays:
@@ -196,7 +196,7 @@ def TDCF(L,num_fig,str2run='',path2ZimT='',Store_folder=''):
             npre_dumb,ncol_dumb,ntot_dumb = [],[],[]
             for Gen in Gens:
                 data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre),delim_whitespace=True)
-                data_tj['Jtdcf'] = abs(data_tj['Jdev']-data_tjdark['Jdev'])
+                data_tj['Jtdcf'] = abs(data_tj['Jext']-data_tjdark['Jext'])
                 # Calculate Densities
                 pre = data_tj[data_tj.t < tswith]
                 col = data_tj[data_tj.t >= tswith]
@@ -224,10 +224,11 @@ def TDCF(L,num_fig,str2run='',path2ZimT='',Store_folder=''):
                     plt.semilogx(data_tj['t1'],data_tj['Qext'],color=colors[idx],label='V$_p$$_r$$_e$ = {:.2f}'.format(Vpre))
 
                 if plot_extract_charges and plot_extract_charges_vs_V:
-                    gen_charge = integrate.cumtrapz(data_tj['G'], data_tj['t'], initial=0) #calc number of photogenerated charges
+                    gen_charge = integrate.cumtrapz(data_tj['Jphoto'], data_tj['t'], initial=0)/(q*L) #calc number of photogenerated charges
                     plt.figure(num_fig_extract_charges_vs_V)
                     Qext_Qgen.append(max(data_tj['Qext'])/max(gen_charge))
                     plt.plot(Vpre,max(data_tj['Qext'])/max(gen_charge),color=colors[idx],linestyle='none',marker='o',markeredgecolor=colors[idx],markersize=10,markerfacecolor=colors[idx],markeredgewidth = 3)
+                   
                                         
 
             pre = data_tj[data_tj.t < tswith]
@@ -377,7 +378,7 @@ if __name__ == '__main__':
 
     ratios = [10]#[1,10,100]
     mumax = 1e-8
-    Lang_pres = [1]#[1,0.1,0.01]
+    Lang_pres = [1,0.1,0.01]
     # for ratio,Lang_pre in product(ratios,Lang_pres): -LIL 20e-9 -LIR 20e-9 
     index = 100
     num_fig = 0
@@ -385,7 +386,7 @@ if __name__ == '__main__':
         f=plt.figure(index,figsize=(20,14))
         for Lang_pre in Lang_pres:
             mumin = mumax/ratio
-            Vpres,Qext_Qgen,num_fig = TDCF(L=100e-9,num_fig=num_fig,str2run = ' -mun_0 {:.2e} -mup_0 {:.2e} -Lang_pre {:.2e}'.format(mumax,mumin,Lang_pre),path2ZimT = 'Simulation_program/ZimT043_BETA',Store_folder = 'TDCF_mu_{:.1e}_Lang_pre_{:.1e}_gen_1e21_ratio_{:.0f}_profile'.format(mumax,Lang_pre,ratio)) 
+            Vpres,Qext_Qgen,num_fig = TDCF(L=100e-9,num_fig=num_fig,str2run = ' -mun_0 {:.2e} -mup_0 {:.2e} -Lang_pre {:.2e}'.format(mumax,mumin,Lang_pre),path2ZimT = 'Simulation_program/DDSuite_v400/ZimT',Store_folder = 'TDCF_mu_{:.1e}_Lang_pre_{:.1e}_gen_1e21_ratio_{:.0f}_profile'.format(mumax,Lang_pre,ratio)) 
             print('mu {:.1e} Lang_pre {:.1e} and Ratio {:.0f} is done!'.format(mumax,Lang_pre,ratio))
             # Vpres,Qext_Qgen,num_fig = TDCF(L=140e-9,num_fig=num_fig,str2run = ' -LIL 20e-9 -LIR 20e-9 -mun_0 {:.2e} -mup_0 {:.2e} -Lang_pre {:.2e}'.format(mumax,mumin,Lang_pre),path2ZimT = 'ZimT043_BETA',Store_folder = 'TDCF_mu_{:.1e}_Lang_pre_{:.1e}_gen_1e22_ratio_{:.0f}_profile_TL'.format(mumax,Lang_pre,ratio)) 
             # print('mu {:.1e} Lang_pre {:.1e} and Ratio {:.0f} is done!'.format(mumax,Lang_pre,ratio))

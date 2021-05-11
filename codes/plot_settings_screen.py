@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 
 mpl.rcParams['savefig.dpi'] = 300
-SMALL_SIZE = 30
-MEDIUM_SIZE = 30
-BIGGER_SIZE = 30
+SMALL_SIZE = 15
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 15
 
 line_thickness = 2# default = 1.1
 # print(plt.rcParams.keys())

@@ -26,7 +26,7 @@ def main():
     # General Inputs
     warnings.filterwarnings("ignore")   # Don't show warnings
     system = platform.system()                  # Operating system
-    max_jobs = 100                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    max_jobs = os.cpu_count()-2                         # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
     if system == 'Windows':             # cannot easily do multiprocessing in Windows
             max_jobs = 1
             slash = '/'
@@ -38,19 +38,19 @@ def main():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'ZimT043_BETA'+slash    # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash    # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
 
     # Simulation input
-    run_simu = False                                         # Rerun simu?
+    run_simu = True                                         # Rerun simu?
     plot_tjs = True                                             # make plot ?
     plot_output = True
     move_ouput_2_folder = True
     Store_folder = 'BACE'+slash
     clean_output = False
-    L = 140e-9                                                  # Device thickness (m)
+    L = 100e-9                                                  # Device thickness (m)
     Gens = [1.44e28]                                               # Max generation rate for the gaussian laser pulse
     Vpres = [0.77]
     Vextrs =[0,-1,-2,-3,-4]
@@ -73,7 +73,7 @@ def main():
     for Vpre in Vpres:
         for Vextr in Vextrs:
             zimt_BACE(1e-8,1e-6,0e28,Vpre,Vextr,1e-10,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Vpre,Vextr))
-            str_lst.append('-L '+str(L)+' -tVG_file tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Vpre,Vextr,Vpre,Vextr))
+            str_lst.append('-FailureMode 1 -L '+str(L)+' -tVG_file tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Vpre,Vextr,Vpre,Vextr))
             sys_lst.append(system)
             path_lst.append(curr_dir+slash+path2ZimT)
             tVG_lst.append('tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Vpre,Vextr))
@@ -85,7 +85,7 @@ def main():
         for Vpre in Vpres:
             for Vextr in Vextrs:
                 zimt_BACE(1e-8,1e-6,Gen,Vpre,Vextr,1e-10,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Gen,Vpre,Vextr))
-                str_lst.append('-L '+str(L)+' -tVG_file tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Gen,Vpre,Vextr,Gen,Vpre,Vextr))
+                str_lst.append('-FailureMode 1 -L '+str(L)+' -tVG_file tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Gen,Vpre,Vextr,Gen,Vpre,Vextr))
                 sys_lst.append(system)
                 path_lst.append(curr_dir+slash+path2ZimT)
                 tVG_lst.append('tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Gen,Vpre,Vextr))
@@ -118,11 +118,11 @@ def main():
                 for Vextr in Vextrs: 
                     data_tjdark = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Vpre,Vextr),delim_whitespace=True)
                     data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Gen,Vpre,Vextr),delim_whitespace=True)
-                    data_tj['JBACE'] = abs(data_tj['Jdev']-data_tjdark['Jdev'])
+                    data_tj['JBACE'] = abs(data_tj['Jext']-data_tjdark['Jext'])
                     zimt_tj_plot(num_fig_tjs,data_tj,y=['JBACE'],labels='G '+sci_notation(Gen, sig_fig=1)+' Vpre {:.2f} Vext {:.2f}'.format(Vpre,Vextr),colors=colors[idx],plot_type=0,save_yes=True,legend=False,pic_save_name = curr_dir+slash+path2ZimT+Store_folder+'transient.jpg') 
                     nextr.append(abs(simps(data_tj['JBACE']/(q*L),x=data_tj['t'])))
                     idx = idx + 1
-             
+    print(nextr)         
 
     
     if plot_output:
