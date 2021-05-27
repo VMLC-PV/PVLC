@@ -46,7 +46,7 @@ def Impedance():
         slash = '/'
 
     curr_dir = os.getcwd()                           # Current working directory
-    path2ZimT = curr_dir+slash+'pascal_codes'+slash+'ZimT043_BETA'+slash  # Path to ZimT
+    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash  # Path to ZimT
     paperdata = curr_dir+slash+'Paper_Sim_Data.txt'  # Path to txt Data File to be added to C/f plot, if paper_comparison is enabled. header: 'f C' delimiter: ' '
 
     ## Physics constants
@@ -54,7 +54,7 @@ def Impedance():
     eps_0 = constants.epsilon_0
 
     ## Simulation input
-    run_simu = 0                                           # Rerun simu? (bool)
+    run_simu = 1                                           # Rerun simu? (bool)
     plot_tjs = 0                                           # make tJ and tV plots? (bool)
     plot_output = 1                                        # make Nyquist and Bode plots? (bool)
     move_ouput_2_folder = True                             # (bool)
@@ -65,18 +65,18 @@ def Impedance():
     nFcm2 = 1                                              # Capacitance unit (bool)
     paper_comparison = 0                                   # compare C/f with given data? (bool)
     L = 100e-9                                             # Device thickness (m)
-    eps = 3.5                                              # active layer permittivity, same as in device_parameters.txt
+    eps = 4                                              # active layer permittivity, same as in device_parameters.txt
     area = 1e-6                                            # Device area (m^2), same as in device_parameters.txt
     C_geo = (eps*eps_0*area/L)                             # geometric capacitance (Ohm)
-    freqs1 = np.geomspace(1e2,1e4,num=20,endpoint=False)
-    freqs2 = np.geomspace(1e4,1e9,num=50,endpoint=True)
+    freqs1 = np.geomspace(1e2,1e4,num=15,endpoint=False)
+    freqs2 = np.geomspace(1e4,1e9,num=20,endpoint=True)
     freqs = np.append(freqs1, freqs2)                      # frequencies to simulate (Hz)
     freqs_interp = np.geomspace(1e2,1e7,num=2000)          # same but more dense range of frequencies (for interpolation)
     # print(freqs)
-    Vapps = [-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
+    Vapps = [0]#[-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
     Vamp = 0.01                       # Amplitude voltage perturbation
     Gen = 0e27                        # Average generation rate 
-    sun = 2.7e27                      # generation rate at 1 sun
+    sun = 1                      # generation rate at 1 sun
 
     ## Figure control
     plottitle = 'ZimT: Organic Solar Cell  {:.0f}nm  {:.1f}sun'.format(L*1e9, Gen/sun)  # full title of plots
@@ -107,9 +107,16 @@ def Impedance():
         # Generate tVG files 
         for freq in freqs:
             for Vapp in Vapps:
+                L_LTL = 0e-9 # m
+                L_RTL = 0e-9 # m
+                CB = 4 # eV
+                VB = 6 # eV
+                W_L = 5 # eV
+                W_R = 5 # eV
+                mu = 1e-7 # m^2/Vs, zero field mobility
                 zimt_impedance(Vapp,Vamp,freq,Gen,steps=200,tVG_name=path2ZimT
                                +'tVG_{:.2f}V_f_{:.1e}Hz.txt'.format(Vapp,freq))
-                str_lst.append('-L '+str(L)+' -tVG_file '
+                str_lst.append('-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -mun_0 '+str(mu)+' -mup_0 '+str(mu)+' -CB '+str(CB)+' -VB '+str(VB)+' -Rseries '+str(0)+' -tVG_file '
                                +'tVG_{:.2f}V_f_{:.1e}Hz.txt '.format(Vapp,freq)
                                +'-tj_file '
                                +'tj_{:.2f}V_f_{:.1e}Hz.dat '.format(Vapp,freq))
@@ -148,10 +155,10 @@ def Impedance():
             with open(path2ZimT+Store_folder  # open in read mode
                       +'tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapps[idx],freq), 'r') as file:
                 data_tj2 = pd.read_csv(file, delim_whitespace=True)
-            Jmo[idx].append(data_tj2['Jdev'])  # save original data for comparison
+            Jmo[idx].append(data_tj2['Jext'])  # save original data for comparison
             tmo[idx].append(data_tj2['t'])
             data_tj2 = preprocess_Impedance_data(data_tj2,freq)
-            Jm[idx].append(data_tj2['Jdev'])  # save preprocessed data for comparison
+            Jm[idx].append(data_tj2['Jext'])  # save preprocessed data for comparison
             tm[idx].append(data_tj2['t'])
             comp = get_complex_impedance(data_tj2,freq)
             ## save
@@ -238,19 +245,19 @@ def Impedance():
                         +'tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapps[idx],freqs[i]), 'r') as file:
                     data_tj = pd.read_csv(file, delim_whitespace=True)
                 ## norm data to interval (-1, 1)
-                data_tj['Jdev_norm'] = data_tj['Jdev']/max(data_tj['Jdev'])*10
-                data_tj['Vdev_norm'] = data_tj['Vdev']/max(data_tj['Vdev'])*10
+                data_tj['Jext_norm'] = data_tj['Jext']/max(data_tj['Jext'])*10
+                data_tj['Vext_norm'] = data_tj['Vext']/max(data_tj['Vext'])*10
                 data_tj['t_norm'] = data_tj['t']/max(data_tj['t'])*10
                 if i%int((len(freqs)-1)/2) == 0:    # plot 3 lines per Vapp
                     ## plot normed J/t
-                    zimt_tj_plot(100, data_tj, x='t_norm', y=['Jdev_norm'],
+                    zimt_tj_plot(100, data_tj, x='t_norm', y=['Jext_norm'],
                                 ylimits= [-1.1,1.1],
                                 labels=sci_notation(freqs[i],sig_fig=0)+' Hz, '+str(Vapps[idx])+' V',
                                 colors=colors[i], line_type=[lines[idx]],
                                 plot_type=0, save_yes=True, legend=True, figsize=size_fig,
                                 title=plottitle+'  Normed J')
                     ## plot normed V/t
-                    zimt_tj_plot(101, data_tj, x='t_norm', y=['Vdev_norm'],
+                    zimt_tj_plot(101, data_tj, x='t_norm', y=['Vext_norm'],
                                 ylimits= [-1.1,1.1],
                                 labels=sci_notation(freqs[i],sig_fig=0)+' Hz '+str(Vapps[idx])+' V',
                                 colors=colors[i], line_type=[lines[idx]],

@@ -63,6 +63,27 @@ def sci_notation(number, sig_fig=2):
             output = '10' + b    
     return output
 
+def monoExp(t, k, A, B):
+    """ Monoexponential decay function
+    f(t) = A * np.exp(-k * t ) + B
+
+    Parameters
+    ----------
+    t : 1-D sequence of floats
+        time
+    k : float
+        decay rate
+    A : float
+        initial quantity
+    B : float
+        offset
+
+    Returns
+    -------
+    1-D sequence of floats
+        f(t)
+    """
+    return A * np.exp(-k * t ) + B
 
 def get_Jsc(Volt,Curr):
     """Get the short-circuit current (Jsc) from solar cell JV-curve by interpolating the current at 0 V
@@ -476,8 +497,8 @@ def get_complex_impedance(df,f):
     complex,
         Complex impedance
     """    
-
-    ampli_Va, freq_Va, phi_Va, offset_Va = fit_sin_func(np.asarray(df['t']),np.asarray(df['Va']),f)
+    # ampli_Va, freq_Va, phi_Va, offset_Va = fit_sin_func(np.asarray(df['t']),np.asarray(df['Va']),f)
+    ampli_Va, freq_Va, phi_Va, offset_Va = fit_sin_func(np.asarray(df['t']),np.asarray(df['Vext']),f)
     ampli_Vdev, freq_Vdev, phi_Vdev, offset_Vdev = fit_sin_func(np.asarray(df['t']),np.asarray(df['Vext']),f)
     ampli_Jdev, freq_Jdev, phi_Jdev, offset_Jdev = fit_sin_func(np.asarray(df['t']),np.asarray(df['Jext']),f)
     phi = phi_Jdev - (phi_Vdev - phi_Va)

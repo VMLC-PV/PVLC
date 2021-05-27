@@ -110,6 +110,8 @@ def deriv(x,y):
     dy = np.diff(y)/np.diff(x)
     dum = (y[-1] - y[-2])/(x[-1] - x[-2]) 
     dy = np.append(dy,[dum])
+    # dum = (y[1] - y[0])/(x[1] - x[0]) 
+    # dy = np.append([dum],dy)
     return list(dy)
 
 def log_slope(x,y):
