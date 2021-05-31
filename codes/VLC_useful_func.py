@@ -696,7 +696,7 @@ def SIMsalabim_JVs_plot(num_fig,data_JV,x='Vext',y=['Jext'],xlimits=[],ylimits=[
     if save_yes:
         plt.savefig(pic_save_name,dpi=300,transparent=True)
 
-def SIMsalabim_dens_plot(num_fig,data_Var,y=['n','p'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],legend=True,save_yes=False,pic_save_name='density.jpg'):
+def SIMsalabim_dens_plot(num_fig,data_Var,Vext='nan',y=['n','p'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],legend=True,save_yes=False,pic_save_name='density.jpg'):
     """Make Var_plot for SIMsalabim 
 
     Parameters
@@ -705,8 +705,10 @@ def SIMsalabim_dens_plot(num_fig,data_Var,y=['n','p'],xlimits=[],ylimits=[],plot
         number of the fig to plot JV
     data_JV : DataFrame
         Panda DataFrame containing JV_file
+    Vext : float
+        float to define the voltage at which the densities will be plotted if Vext='nan' then take Vext as max(Vext), if Vext does not exist we plot the closest voltage, default 'nan'
     y : list of str, optional
-        yaxis data can be multiple like ['n','p']  (default = ['Jext']), by default ['n','p']
+        yaxis data can be multiple like ['n','p'], by default ['n','p']
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
     ylimits : list, optional
@@ -735,6 +737,16 @@ def SIMsalabim_dens_plot(num_fig,data_Var,y=['n','p'],xlimits=[],ylimits=[],plot
         for counter, value in enumerate(y):
             line_type.append('-')
 
+    if Vext == 'nan':
+        Vext = max(data_Var['Vext'])
+        print('Vext was not specified so Vext = {:.2f} V was plotted'.format(Vext))
+    
+    data_Var = data_Var[abs(data_Var.Vext -Vext) == min(abs(data_Var.Vext -Vext))]
+    data_Var = data_Var.reset_index(drop=True)
+    if min(abs(data_Var.Vext -Vext)) != 0:
+        print('Vext = {:.2f} V was not found so {:.2f} was plotted'.format(Vext,data_Var['Vext'][0]))
+    
+    # print(data_Var)
     plt.figure(num_fig)
     ax_Vars_plot = plt.axes()
     for i,line in zip(y,line_type):

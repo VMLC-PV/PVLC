@@ -75,7 +75,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
         slash = '/'
 
     # Simulation input
-    run_simu = True                                         # Rerun simu?
+    run_simu = False                                         # Rerun simu?
  
 
     # Initialize
@@ -162,7 +162,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
             [], [], color=colors[idx], linestyle='-', marker='None', label=lbl))
         plt.legend(handles=dens_patches, loc='best',
                     frameon=False, fontsize=30)
-        SIMsalabim_dens_plot(1, data_var, y=['n', 'p'], xlimits=[], ylimits=[], plot_type=2, labels=lbl, colors=colors[idx],
+        SIMsalabim_dens_plot(1, data_var,y=['n', 'p'], xlimits=[], ylimits=[], plot_type=2, labels=lbl, colors=colors[idx],
                                 line_type=lines, legend=False, save_yes=True, pic_save_name=Store_Folder / np_plot_filename)
         plt.legend(prop={"size": 15}, ncol=3, )
         plt.ylim(1e8, 1e19)
@@ -181,10 +181,10 @@ if __name__ == '__main__':
     ext_save_pic = '.jpg'
     
     # Simulation types
-    MIM_configuration = False
+    MIM_configuration = True
     Pin_nip_configuration = False
     Traps_configuration = False
-    Interface_traps_configuration = True
+    Interface_traps_configuration = False
 
     # First setup for MIM
     if MIM_configuration:

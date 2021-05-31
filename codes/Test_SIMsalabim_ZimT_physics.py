@@ -41,7 +41,7 @@ else:
 curr_dir = os.getcwd()
 idx = 0
 lines = ['-', '--', '-.', ':']
-sys_lst, path_lst = [], []
+
 # Figures control
 size_fig = (14, 6)
 fig_idx = 0
@@ -49,11 +49,20 @@ fig_idx = 0
 # Inputs
 curr_dir = os.getcwd()                      # Current working directory
 path2SIMsalabim = 'Simulation_program/DDSuite_v400/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
 ext_save_pic = '.jpg'
+
+# Chose test to run:
+Test_gen_profile = True
+Test_SCLC_MottGurney = True
+Test_SCLC_Traps = True
+Test_TPV = True
+Test_TPC = True
+Test_RCtime = True
+Test_Impedance = True
 
 
 ### Test generation profile
-Test_gen_profile = False
 if Test_gen_profile:
     # Test whether the generation profile is correclty inputed in SIMsalabim
     print('\n')
@@ -67,6 +76,7 @@ if Test_gen_profile:
     labels = ['No profile', 'Blue profile', 'Red profile']
     JV_files = ['JV_no_profile.dat','JV_blue.dat','JV_red.dat']
     Var_files = ['Var_no_profile.dat','Var_blue.dat','Var_red.dat']
+    sys_lst, path_lst = [], []
 
     f_gen_pro,ax = plt.subplots(1,3,num =fig_idx, figsize=size_fig)
     fig_idx = fig_idx + 1
@@ -149,7 +159,6 @@ if Test_gen_profile:
 
 ### Test textbook SCLC
 # Test fit mobility with Mott-Gurney equation
-Test_SCLC_MottGurney = False
 if Test_SCLC_MottGurney:
     from SCLC_func import fit_MottGurney,MottGurney,log_slope
     # Test whether the generation profile is correclty inputed in SIMsalabim
@@ -164,6 +173,7 @@ if Test_SCLC_MottGurney:
     Store_Folder = Path(curr_dir+slash+'Test simulation/')
     mun_0s = [1e-8,1e-7,1e-4]
     labels, JV_files, Var_files, str_lst = [],[],[],[]
+    sys_lst, path_lst = [], []
     for i in mun_0s:
         labels.append('{:.1e}'.format(i))
         JV_files.append('JV_mu_{:.1e}.dat'.format(i))
@@ -171,7 +181,7 @@ if Test_SCLC_MottGurney:
         str_lst.append( '-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps_r)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -Rseries 0 -Gehp 0 -Vmin 0.001 -Vmax 25 -Vacc -0.1 -Vdistribution 2 -NJV 50 -until_Voc 0 -MaxRangeJ 5e-6 -mun_0 {:.1e} -mup_0 {:.1e} -JV_file JV_mu_{:.1e}.dat -Var_file Var_mu_{:.1e}.dat'.format(i,i,i,i))
         sys_lst.append(system)
         path_lst.append(curr_dir+slash+path2SIMsalabim)
-    print(str_lst)
+
     f_gen_pro,ax = plt.subplots(1,3,num =fig_idx, figsize=size_fig)
     fig_idx = fig_idx + 1
     subplot_num = 0
@@ -219,7 +229,6 @@ if Test_SCLC_MottGurney:
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 
 # test to get trap density from Vtfl
-Test_SCLC_Traps = False
 if Test_SCLC_Traps:
     from SCLC_func import* 
     # Test whether the generation profile is correclty inputed in SIMsalabim
@@ -234,10 +243,11 @@ if Test_SCLC_Traps:
     Nc = 1e24
     mun_0 = 1e-4 # m^2/Vs, zero field mobility
     Tr_type_B = -1 # Trap type of bulk and grain boundary traps: -1: acceptor, 0: neutral, 1: donor
-    Bulk_trs = [5e21,8e21,1e22]
+    Bulk_trs = [5e21,6e21,7e21,8e21]
     Store_Folder = Path(curr_dir+slash+'Test simulation/')
     
     labels, JV_files, Var_files, str_lst = [],[],[],[]
+    sys_lst, path_lst = [], []
     for i in Bulk_trs:
         labels.append('{:.1e}'.format(i))
         JV_files.append('JV_Bulk_tr_{:.1e}.dat'.format(i))
@@ -305,12 +315,10 @@ if Test_SCLC_Traps:
 
 
 # test TPV compare Voc from ZimT and SIMsalabim
-Test_TPV = False
 if Test_TPV:
     print('\n')
     print('Start the Test TPV compare Voc from ZimT and SIMsalabim:')
     from tVG_gen import zimt_light_decay
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
     # Simulation input
     run_simu = True                                        # Rerun simu?
     plot_tjs = True                                        # make plot ?
@@ -329,7 +337,7 @@ if Test_TPV:
     start = time()
 
     # Figures control
-    size_fig = (16, 12)
+    
     colors = cm.viridis((np.linspace(0,1,max(len(Gens),4)+1)) ) # Color range for plotting
     f_tjs = plt.figure(fig_idx,figsize=size_fig)
     
@@ -353,7 +361,7 @@ if Test_TPV:
         p.close()
         p.join()
 
-        print('Calculation time {:.2f} s'.format(time() - start)) # Time in seconds
+        print('ZimT calculation time {:.2f} s'.format(time() - start)) # Time in seconds
 
     ## Move output folder to new folder
     if move_ouput_2_folder: # Move outputs to Store_folder
@@ -364,7 +372,7 @@ if Test_TPV:
     print('Calculate Steady-state:') # Time in seconds
     str_lst,JV_files,sys_lst,path_lst,scPars_files = [],[],[],[],[]
     Gehps = Gens + G0s
-    print(Gehps)
+
     for Gen in Gehps:    
         str_lst.append('-L '+str(L)+' -Gehp {:.1e} -scPars_file sc_G_{:.1e}.dat -JV_file JV_TPV_G_{:.1e}.dat'.format(Gen,Gen,Gen))
         JV_files.append('JV_TPV_G_{:.1e}.dat'.format(Gen))
@@ -386,6 +394,7 @@ if Test_TPV:
     ################## tjs_file ############################
     ########################################################
     if plot_tjs:
+        print('Now plotting the results...') 
         plt.figure(fig_idx)
         # colors=['k']
         for scPars_file in scPars_files:
@@ -399,16 +408,15 @@ if Test_TPV:
                 zimt_Voltage_transient_plot(fig_idx,data_tj,y=['Vext'],xlimits=[],colors=colors[idx],plot_type=0,save_yes=True,pic_save_name = curr_dir+slash+'Test simulation/'+'test_TPV.jpg') 
                 idx = idx + 1
     
+    print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
     fig_idx = fig_idx + 1
     
 
 # test TPC compare Jsc from ZimT and SIMsalabim
-Test_TPC = False
 if Test_TPC:
     print('\n')
     print('Start the Test TPC compare Jsc from ZimT and SIMsalabim:')
     from tVG_gen import zimt_light_decay
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
     # Simulation input
     run_simu = False                                        # Rerun simu?
     plot_tjs = True                                        # make plot ?
@@ -427,7 +435,6 @@ if Test_TPC:
     start = time()
 
     # Figures control
-    size_fig = (16, 12)
     colors = cm.viridis((np.linspace(0,1,max(len(Gens),4)+1)) ) # Color range for plotting
     f_tjs = plt.figure(fig_idx,figsize=size_fig)
 
@@ -462,7 +469,7 @@ if Test_TPC:
     print('Calculate Steady-state:') # Time in seconds
     str_lst,JV_files,sys_lst,path_lst,scPars_files = [],[],[],[],[]
     Gehps = Gens + G0s
-    print(Gehps)
+
     for Gen in Gehps:    
         str_lst.append('-L '+str(L)+' -Gehp {:.1e} -scPars_file sc_G_{:.1e}.dat -JV_file JV_TPC_G_{:.1e}.dat'.format(Gen,Gen,Gen))
         JV_files.append('JV_TPC_G_{:.1e}.dat'.format(Gen))
@@ -484,6 +491,7 @@ if Test_TPC:
     ################## tjs_file ############################
     ########################################################
     if plot_tjs:
+        print('Now plotting the results...')
         plt.figure(fig_idx)
         # colors=['k']
         for scPars_file in scPars_files:
@@ -496,17 +504,16 @@ if Test_TPC:
                 data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_TPC_G_{:.1e}_G0_{:.1e}.dat'.format(Gen,G0),delim_whitespace=True)
                 zimt_tj_plot(fig_idx,data_tj,y=['Jext'],colors=colors[idx],plot_type=0,save_yes=True,legend=False,pic_save_name = curr_dir+slash+'Test simulation/'+'test_TPC.jpg')
     
+    print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
     fig_idx = fig_idx + 1
 
 
 
 
 # test RC-time decay
-Test_RCtime = False
 if Test_RCtime:
     print('\n')
     print('Start the Test RC-time decay:')
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
     # Simulation input
     run_simu = True                                        # Rerun simu?
     plot_tjs = True                                        # make plot ?
@@ -535,7 +542,6 @@ if Test_RCtime:
     start = time()
 
     # Figures control
-    size_fig = (16, 12)
     colors = cm.viridis((np.linspace(0,1,max(len(Vstarts),4)+1)) ) # Color range for plotting
     f_tjs = plt.figure(fig_idx,figsize=size_fig)
 
@@ -592,7 +598,6 @@ if Test_RCtime:
                 zimt_tj_plot(fig_idx,data_tj,y=['Jext'],colors=colors[idx],plot_type=0,save_yes=True,legend=True,labels='RC-input = {:.2e}'.format(Rseries*Cgeo),pic_save_name = curr_dir+slash+'Test simulation/'+'test_RC_decay.jpg')
 
 # test Impedance simple capacitor
-Test_Impedance = False
 if Test_Impedance:
     print('\n')
     print('Start the Test Impedance:')
@@ -603,8 +608,6 @@ if Test_Impedance:
     from impedance import preprocessing as imppre
     from impedance import visualization as impvis
     curr_dir = os.getcwd()                           # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash  # Path to ZimT
-    paperdata = curr_dir+slash+'Paper_Sim_Data.txt'  # Path to txt Data File to be added to C/f plot, if paper_comparison is enabled. header: 'f C' delimiter: ' '
 
     ## Physics constants
     q = constants.value(u'elementary charge')
@@ -644,8 +647,6 @@ if Test_Impedance:
     ## Figure control
     plottitle = 'Test Impedance' #'ZimT: Organic Solar Cell  {:.0f}nm  {:.1f}sun'.format(L*1e9, Gen/sun)  # full title of plots
     savetitle = 'Test_Impedance'    # start of filename of plots
-    size_fig = (13, 9)
-    # size_fig_nyquist = (20, 9)
     colors = cm.viridis((np.linspace(0, 1, max(len(freqs), 4)+1)))  # Freq colors (virid-ish)
     colors1 = cm.winter(np.linspace(0, 1, max(len(Vapps), 4)+1))    # Vapp colors (blue-ish)
     colors1[1] = colors1[0]  # Color adjustment for dark colors: skip second color
