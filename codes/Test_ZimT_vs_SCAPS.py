@@ -170,7 +170,7 @@ def JV_scan(str2run=[''],Gens=[0],num_fig=0,path2ZimT='',Store_folder='',hasTL=T
             for scan in scans:
                 for Gen in Gens:
                         data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_JV_scan_{:.2e}_G_{:.2e}_{}.dat'.format(scan,Gen,idc),delim_whitespace=True)
-                        zimt_tj_JV_plot(num_fig_JV,data_tj,x='Vext',y=['Jext'],xlimits = [Vmin-0.1,max(1.4,Vmax+0.1)],ylimits=[-27,2] ,colors=colors[idx],labels=lbl,pic_save_name=curr_dir+slash+path2ZimT+Store_folder+PlotName)
+                        zimt_tj_JV_plot(num_fig_JV,data_tj,x='Vext',y=['Jext'],xlimits = [Vmin-0.1,max(1.4,Vmax+0.1)],ylimits=[-27,2] ,colors=colors[idx],labels=lbl,pic_save_name=curr_dir+slash+Store_folder+PlotName)
 
 
             
@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
     curr_dir = os.getcwd()  # Current working directory
     slash = '/'
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash    # Path to SIMsalabim in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v405/ZimT'+slash    # Path to SIMsalabim in curr_dir
     ext_save_pic = '.jpg'
 
 
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         labels = ['Reference', 'Test number 1', 'Test number 2', 'Test number 3', 'Test number 5']
         JVscaps_lst = [path_scaps / 'testref.iv', path_scaps / 'test1.iv', path_scaps / 'test2.iv',
                        path_scaps / 'test3.iv', path_scaps / 'test5.iv']
-        JV_plot_filename = 'JV_MIM_configuration_ZimT'+ext_save_pic
+        JV_plot_filename = 'Test simulation/JV_MIM_configuration_ZimT'+ext_save_pic
         has_TL = False
         JV_scan(str2run=str_lst,Gens=[4.3e27],num_fig=0,path2ZimT = path2ZimT,Store_folder='',PlotName= JV_plot_filename,MaxVol=1.32)
 
@@ -250,7 +250,7 @@ if __name__ == '__main__':
                    'Test number 3', 'Test number 4', 'Test number 5']
         JVscaps_lst = [path_scaps / 'TLtestref.iv', path_scaps / 'TLtest1.iv', path_scaps / 'TLtest2.iv',
                        path_scaps / 'TLtest3.iv', path_scaps / 'TLtest4.iv', path_scaps / 'TLtest5.iv']
-        JV_plot_filename = 'JV_Pin_nip_configuration_ZimT' + ext_save_pic
+        JV_plot_filename = 'Test simulation/JV_Pin_nip_configuration_ZimT' + ext_save_pic
         has_TL = True
         JV_scan(str2run=str_lst, Gens=[4.2e27], num_fig=0, path2ZimT=path2ZimT,
                 Store_folder='',PlotName=JV_plot_filename,MaxVol=1.45)
@@ -281,7 +281,7 @@ if __name__ == '__main__':
                      path_scaps / 'traptest3.iv',path_scaps / 'traptest4.iv',
                      path_scaps / 'traptest6.iv',path_scaps / 'traptest7.iv', path_scaps / 'traptest8.iv',
                      path_scaps / 'traptest9.iv', path_scaps / 'traptest10.iv', path_scaps / 'traptest11.iv']
-        JV_plot_filename = 'JV_Traps_configuration_ZimT'+ext_save_pic 
+        JV_plot_filename = 'Test simulation/JV_Traps_configuration_ZimT'+ext_save_pic 
         has_TL = True
         JV_scan(str2run=str_lst, Gens=[4.2e27], num_fig=0, path2ZimT=path2ZimT,
                 Store_folder='',PlotName=JV_plot_filename,MaxVol=1.35)
@@ -328,7 +328,9 @@ if __name__ == '__main__':
                      path_scaps / 'npiftest3.eb',path_scaps / 'npiftest4.eb', path_scaps / 'npiftest5.eb',
                      path_scaps / 'npiftest6.eb',path_scaps / 'npiftest7.eb', path_scaps / 'npiftest8.eb',
                      path_scaps / 'npiftest9.eb', path_scaps / 'npiftest10.eb', path_scaps / 'npiftest11.eb']
-        JV_plot_filename = 'JV_Interface_traps_configuration_ZimT'+ext_save_pic 
+        JV_plot_filename = 'Test simulation/JV_Interface_traps_configuration_ZimT'+ext_save_pic 
         has_TL = True
         JV_scan(str2run=str_lst, Gens=[4.2e27], num_fig=0, path2ZimT=path2ZimT,
-                Store_folder='',PlotName=JV_plot_filename,MaxVol=1.35)    
+                Store_folder='',PlotName=JV_plot_filename,MaxVol=1.35)
+
+    plt.show()    

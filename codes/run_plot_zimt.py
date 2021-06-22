@@ -3,86 +3,153 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
+import subprocess,shutil,os,tqdm,parmap,multiprocessing,platform,warnings,itertools
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+import matplotlib.lines as mlines
+from pathlib import Path
+# Package by VLC
+from VLC_useful_func import *
+from tVG_gen import *
 import plot_settings_screen
-from scipy import stats
-import subprocess,shutil,os
-from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,zimt_tj_JV_plot,run_code
-from tVG_gen import zimt_light_decay,zimt_voltage_decay,zimt_JV_sweep,zimt_TPV
-import warnings
 
-# Don't show warnings
-warnings.filterwarnings("ignore")
-color_nTL = '#c7e6a3'
-color_pTL = '#8cb5f0'
-color_pero = '#ba0000'
-color_electrode ='#999999'
-ext_save_pic = '.jpg'
-Vt = 0.0256 # at 25 C
+def run_plot_zimt():
+    ## General Inputs
+    warnings.filterwarnings("ignore")   # Don't show warnings
+    system = platform.system()                  # Operating system
+    max_jobs = os.cpu_count()-2                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    if system == 'Windows':             # cannot easily do multiprocessing in Windows
+            max_jobs = 1
+            slash = '/'
+            try:
+                os.system('taskkill.exe /F /IM zimt.exe')
+            except:
+                pass
+    else:
+        slash = '/'
 
-# Inputs
-sytem = 'Windows'
-size_fig = (16, 12)
-num_fig_tjs= 0
-num_fig_JV = 1
+    curr_dir = os.getcwd()
+    path2ZimT = Path(os.getcwd()) /'Simulation_program/DDSuite_v403_OPV/ZimT'
+    run_simu = False #Rerun simulation
 
-# zimt_light_decay(1e-10,20e-6,1.1e28,1e28,0,1e-8,tVG_name='tVG1.txt')
-# zimt_light_decay(1e-10,20e-6,1.1e28,1e28,0,1e-7,tVG_name='tVG2.txt')
-
-# zimt_voltage_decay(1e-10,10e-6,0.5,0.1,0,1e-9,tVG_name='tVG1.txt')
-# zimt_voltage_decay(1e-10,10e-6,0.5,0.1,0,1e-8,tVG_name='tVG2.txt')
-
-# zimt_JV_sweep(0,1.4,0.1,4.2e27,0.5,tVG_name='tVG1.txt')
-# zimt_JV_sweep(0,1.4,0.1,4.2e27,0.1,tVG_name='tVG2.txt')
-zimt_TPV(1e-8,1,1e30,1e-8,5e-8,time_exp =True,tVG_name='tVG1.txt')
-
-Simu_str1 = '-tVG_file tVG1.txt' 
-# Simu_str2 = '-tVG_file tVG2.txt' 
-
-str_lst = [Simu_str1]#,Simu_str2]
-
-labels = [sci_notation(1e-8,sig_fig=1)]#,sci_notation(1e-7,sig_fig=1)]
-
-# colors = cm.viridis(np.linspace(0,1,max(len(str_lst),4)+1))
-colors = cm.rainbow(np.linspace(0,1,max(len(str_lst),4)+1))
-
-
-run_simu = True
-# JV_file plots
-plot_tjs = True
-
-
-idx = 0
-curr_dir = os.getcwd()
-path2ZimT = ''
-for Simu_str,lbl in zip(str_lst,labels):
-    # Run simulation
-    if run_simu:
-        run_zimt(Simu_str,sytem)
-        
-    # Import files
-    path = ''
-    JV_names = ['t', 'Va', 'Vdev', 'G', 'Rec', 'Jdev', 'range', 'Qnet', 'Jncat', 'Jpan']
-    JV_file_name = r'\tj.dat'
-    data_tj = pd.read_csv(curr_dir+path2ZimT+JV_file_name,delim_whitespace=True)
-    
-
-    ########################################################
-    ################## JVs_file ############################
-    ########################################################
+    ## Figures control
+    ext_save_pic = '.jpg'
+    size_fig = (16, 12)
+    num_fig = 0
+    # tj_file plots
+    plot_tjs = True # Make JV plot
     if plot_tjs:
-        f_tjs = plt.figure(num_fig_tjs,figsize=size_fig)
-        zimt_tj_plot(num_fig_tjs,data_tj,0,lbl,colors[idx]) # input = num_fig,data_JV,plot_type,pic_save_name,save_yes,plot_jvexp,jvexp_name
-        f_JVs = plt.figure(num_fig_JV,figsize=size_fig)
-        zimt_tj_JV_plot(num_fig_JV,data_tj,0,lbl,colors[idx])
-        
+        num_fig = num_fig + 1
+        num_tj_plot = num_fig
+        f_tjs = plt.figure(num_tj_plot,figsize=size_fig)
+    # Var_file plots
+    plot_nrj_diag = False # Make energy diagram plot
+    plot_densities = True # Make density plot
+    if plot_nrj_diag:
+        num_fig = num_fig + 1
+        num_nrj_diag_plot = num_fig
+        f_nrj_diag = plt.figure(num_nrj_diag_plot,figsize=size_fig)
 
+    if plot_densities:
+            num_fig = num_fig + 1
+            num_dens_plot = num_fig
+            f_nrj_diag = plt.figure(num_dens_plot,figsize=size_fig)
+
+
+    ## Prepare tVG file (Can be any of the experiment described in tVG_gen.py)
+    name_tVG = 'tVG_TPC.txt'
+    zimt_TPC(1e-8,1e-6,1e31,0,1e-8,tpulse=5e-8,time_exp =True,tVG_name=path2ZimT/name_tVG) # Simulation input for zimt_TPC (see tVG_gen.py) 
+
+    ## Prepare strings to run
+    # Fixed string
+    fixed_str = '-tVG_file '+name_tVG
+    # Parameters to vary
+    parameter1 = {'name':'L','values':[140e-9]}
+    parameter2 = {'name':'Lang_pre','values':[0.1]}
+    parameter3 = {'name':'L_LTL','values':[20e-9]}
+    parameter4 = {'name':'L_RTL','values':[30e-9]}
+    th_TL_left = parameter3['values'][0] # needed for nrj_diag plot
+    th_TL_right = parameter4['values'][0] # needed for nrj_diag plot
+    parameters = [parameter1,parameter2,parameter3,parameter4] 
+
+    str_lst,labels,JVexp_lst,tj_files,Var_files,sys_lst,path_lst = [],[],[],[],[],[],[]
+    val,nam = [],[]
+    for param in parameters:
+        val.append(param['values'])
+        nam.append(param['name'])
+
+    for i in list(itertools.product(*val)):
+        str_line = fixed_str+ ' '
+        lab = ''
+        tj_name = 'tj'
+        Var_name = 'Var'
+        for j,name in zip(i,nam):
+            str_line = str_line +'-'+name+' {:.2e} '.format(j)
+            lab = lab+name+' {:.2e} '.format(j)
+            tj_name = tj_name +'_'+name +'_{:.2e}'.format(j)
+            Var_name = Var_name +'_'+ name +'_{:.2e}'.format(j)
+        str_lst.append(str_line + '-tj_file '+tj_name+ '.dat -Var_file '+Var_name+'.dat')
+        tj_files.append(Path(path2ZimT) / str(tj_name+ '.dat'))
+        Var_files.append(Path(path2ZimT) / str(Var_name+ '.dat'))
+        labels.append(lab)
+        JVexp_lst.append('')
+        sys_lst.append(system)
+        path_lst.append(path2ZimT)
+
+    colors = plt.cm.viridis(np.linspace(0,1,max(len(str_lst),4)+1)) # prepare color for plots
     
-    # plt.semilogy(data_JV['Vext'],(data_JV['Jext'] + data_JV2['Jext'])/10)
-    idx = idx+1
 
-plt.show()
+    ## Run simulation
+    if run_simu:
+        # Run SIMsalabim
+        run_multiprocess_simu(run_zimt,max_jobs,str_lst,sys_lst,path_lst)
 
+
+    ## Plots
+    idx = 0
+    for Simu_str,exp_name,lbl,tj_file_name,Var_file_name in zip(str_lst,JVexp_lst,labels,tj_files,Var_files):
+
+        ## Plot tjs
+        if plot_tjs:
+            data_tj = pd.read_csv(path2ZimT/tj_file_name,delim_whitespace=True)
+            zimt_tj_plot(num_tj_plot,data_tj,x='t',y=['Jext'],xlimits=[],ylimits=[],plot_type=0,labels=labels[idx],colors=colors[idx],line_type = ['-'],mark='',legend=False,save_yes=False,pic_save_name='transient.jpg')  
+
+
+        ## Plot Var_file
+        if plot_nrj_diag or plot_densities:
+            data_var = pd.read_csv(Var_file_name,delim_whitespace=True) # Load Var_file
+            
+        # Energy diagram plot
+        # if plot_nrj_diag:
+        #     SIMsalabim_nrj_diag(num_nrj_diag_plot ,data_var,th_TL_left,th_TL_right,legend=False,Background_color=False,no_axis=False,pic_save_name='Energy_diagram'+ext_save_pic)
+
+        # Carrier density plot
+        if plot_densities:
+             # What do we plot?
+            dens2plot = ['n','p']
+            line_type = ['-','--']    
+            # control colorbar
+            colorbar = 'log'
+            if idx == 0 and colorbar != 'None':
+                colorbar_display = True
+            else:
+                colorbar_display = False 
+            # add legend for the density type
+            plt.figure(num_dens_plot)
+            leg_line = []
+            for d,l in zip(dens2plot,line_type):
+                leg_line.append(mlines.Line2D([], [], color='k', marker='None',markersize=15, label=d,linestyle=l)) # Create a legend for the first line.
+            first_legend = plt.legend(handles=leg_line, loc='upper right',frameon=False)
+            plt.gca().add_artist(first_legend) # Add the legend manually to the current Axes.
+
+            zimt_dens_plot(num_dens_plot,data_var,time=list(np.geomspace(1e-8,1e-6,10)),y=['n','p'],plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=colorbar_display)
+            
+        idx = idx+1
+
+
+
+if __name__ == '__main__':
+
+    run_plot_zimt()
+    plt.show()

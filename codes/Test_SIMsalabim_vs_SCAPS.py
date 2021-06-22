@@ -3,27 +3,20 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
-import os
-import sys
-import platform
-import tqdm
-import parmap
-import multiprocessing
-import platform
+import os,sys,platform,tqdm,parmap,multiprocessing,platform,subprocess,shutil,warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.lines as mlines
 from time import time
-import plot_settings_screen
-from scipy import stats
-import subprocess
-import shutil
-from VLC_useful_func import sci_notation, run_SIMsalabim, SIMsalabim_nrj_diag, SIMsalabim_JVs_plot, make_df_JV, SIMsalabim_dens_plot, make_df_Var
-import warnings
 from scipy import constants
 from pathlib import Path
+from scipy import stats
+# Package by VLC
+import plot_settings_screen
+from VLC_useful_func import *
+
 # Don't show warnings
 warnings.filterwarnings("ignore")
 
@@ -37,26 +30,37 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
     ----------
     path_scaps : list of str
         list containing the path to the scaps simulation results
+
     str_lst : list of str
         list of the string to run for SIMsalabim
+
     has_TL : bool
         If True the test include transport layers
+
     labels : list of str
         list containing the labels for the plot
+
     JV_files : list of str
         list containing the filenames for the JV_file output from SIMsalabim
+
     Var_files : list of str
         list containing the filenames for the Var_file output from SIMsalabim
+
     path2SIMsalabim : str
         string with the path to SIMsalabim
+
     Store_Folder : str
         name of the folder where the SIMsalabim output it stored 
+
     JVscaps_lst : list of str
         list containing the filenames of the output from scaps containing the JV data
+
     NPexp_lst : list of str
         list containing the filenames of the output from scaps containing the carrier density data
+
     JV_plot_filename : str
         filename for the saved image of the JV comparison figure
+        
     np_plot_filename : str
         filename for the saved image of the carrier density comparison figure
     """    
@@ -75,7 +79,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
         slash = '/'
 
     # Simulation input
-    run_simu = False                                         # Rerun simu?
+    run_simu = True                                         # Rerun simu?
  
 
     # Initialize
@@ -141,7 +145,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
                                          header=None, delim_whitespace=True, usecols=[1, 7, 8], skiprows=34, skipfooter=10)
 
         data_var = make_df_Var(Path(Store_Folder / Var_file_name))
-        data_var['x'] = data_var['x'] * 1e9
+        # data_var['x'] = data_var['x'] * 1e9
 
         ########################################################
         ## Compare SIMsalabim and scaps JVs
@@ -177,14 +181,14 @@ if __name__ == '__main__':
     # Inputs
     slash = '/'
     curr_dir = os.getcwd()                      # Current working directory
-    path2SIMsalabim = 'Simulation_program/DDSuite_v400/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+    path2SIMsalabim = 'Simulation_program/DDSuite_v405/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
     ext_save_pic = '.jpg'
     
     # Simulation types
-    MIM_configuration = True
+    MIM_configuration = False
     Pin_nip_configuration = False
     Traps_configuration = False
-    Interface_traps_configuration = False
+    Interface_traps_configuration = True
 
     # First setup for MIM
     if MIM_configuration:

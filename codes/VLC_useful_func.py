@@ -5,10 +5,12 @@
 # Package import
 import numpy as np
 import pandas as pd
+import matplotlib as mp
 import matplotlib.pyplot as plt
+from matplotlib.legend import Legend
 import plot_settings_screen
 from scipy import stats,optimize,constants
-import subprocess,shutil,os,glob
+import subprocess,shutil,os,glob,tqdm,parmap,multiprocessing
 from itertools import repeat
 import warnings
 import sys
@@ -63,18 +65,74 @@ def sci_notation(number, sig_fig=2):
             output = '10' + b    
     return output
 
-def monoExp(t, k, A, B):
+def MonoExpDecay(t, tau, f0 , finf):
     """ Monoexponential decay function
-    f(t) = A * np.exp(-k * t ) + B
+    f(t) = (f0-finf) * np.exp(-(t/tau) ) + finf
 
     Parameters
     ----------
     t : 1-D sequence of floats
         time
+
     k : float
-        decay rate
+        lifetime
+
+    f0 : float
+        initial quantity
+
+    finf : float
+        offset
+
+    Returns
+    -------
+    1-D sequence of floats
+        f(t)
+    """
+    return (f0-finf) * np.exp(-(t/tau) ) + finf
+
+def MonoExpInc(t, tau, f0, finf):
+    """ Monoexponential Inc function
+    f(t) = (finf-f0) *(1-np.exp(-(t/tau))) + f0)
+
+    Parameters
+    ----------
+    t : 1-D sequence of floats
+        time
+
+    k : float
+        lifetime
+
+    f0 : float
+        initial quantity
+
+    finf : float
+        offset
+
+    Returns
+    -------
+    1-D sequence of floats
+        f(t)
+    """
+    return (finf-f0) *(1-np.exp(-(t/tau))) + f0
+
+def StretchedExp(t, tau, h, A, B):
+    """ Stretched decay function
+    f(t) = A * np.exp(- (t/tau)^h ) + B
+
+    Parameters
+    ----------
+    t : 1-D sequence of floats
+        time
+
+    tau : float
+        lifetime
+    
+    h : float
+        heterogeneity parameter
+
     A : float
         initial quantity
+
     B : float
         offset
 
@@ -83,7 +141,7 @@ def monoExp(t, k, A, B):
     1-D sequence of floats
         f(t)
     """
-    return A * np.exp(-k * t ) + B
+    return A * np.exp(- (t/tau)**h ) + B
 
 def get_Jsc(Volt,Curr):
     """Get the short-circuit current (Jsc) from solar cell JV-curve by interpolating the current at 0 V
@@ -147,9 +205,9 @@ def get_FF(Volt,Curr):
             power.append(i*j)
     power_max = min(power)
     FF_dumb = power_max/(Volt_oc*Curr_sc)
-    return FF_dumb
+    return abs(FF_dumb)
 
-def get_PCE(Volt,Curr,suns):
+def get_PCE(Volt,Curr,suns=1):
     """Get the power conversion efficiency (PCE) from solar cell JV-curve
 
     Parameters
@@ -169,7 +227,7 @@ def get_PCE(Volt,Curr,suns):
     Jsc_dumb = get_Jsc(Volt, Curr)
     FF_dumb = get_FF(Volt, Curr)
     PCE_dumb = Voc_dumb*Jsc_dumb*FF_dumb/suns
-    return PCE_dumb  
+    return abs(PCE_dumb)
 
 def get_ideality_factor(suns,Vocs,T=295):
     """Returns ideality factor from suns-Voc data linear fit of Voc = (nIF/Vt)*log(suns) + intercept
@@ -189,14 +247,18 @@ def get_ideality_factor(suns,Vocs,T=295):
     -------
     nIF : float
         Ideality factor value.
+
     intercept : float
         Intercept of the regression line.
+
     rvalue : float
         Correlation coefficient.
+
     pvalue : float
         Two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero, using Wald Test with t-distribution of
         the test statistic.
+
     stderr : float
         Standard error of the estimated gradient.
     """
@@ -366,6 +428,32 @@ def run_code(name_prog,path,str2run,System):
     else: print('Wrong system input')
     os.chdir(curr_dir)
 
+def run_multiprocess_simu(prog2run,max_jobs,str_lst,sys_lst,path_lst):
+    """run_multiprocess_simu runs simulations in parrallel (if possible) on max_jobs number of threads
+
+    Parameters
+    ----------
+    prog2run : function
+        name of the function that runs the simulations
+    
+    max_jobs : int
+        Number of threads used
+
+    str_lst : list of str
+        List containing the strings to run
+
+    sys_lst : list of str
+        List containing the strings to specify the operating system.
+        The options are: 'Linux' or 'Windows'
+
+    path_lst : list of str
+        List containing the path to the folder containing the simulation program
+    """
+    p = multiprocessing.Pool(max_jobs)
+    results = parmap.starmap(prog2run,list(zip(str_lst,sys_lst,path_lst)), pm_pool=p, pm_processes=max_jobs,pm_pbar=True)
+    p.close()
+    p.join()
+
 
 
 ######################################################################
@@ -412,6 +500,7 @@ def preprocess_Impedance_data(df,f):
     ----------
     df : DataFrame
         Dataframe contening the tj_file output from ZimT
+
     f : float
         frequency of the measurement in Hz
 
@@ -434,12 +523,16 @@ def sin_func(t,ampli,f,phi,offset):
     ----------
     t : 1-D sequence of floats
         contains the time vector
+
     ampli : float
         amplitude of the sine perturbation
+
     f : float
         frequency of the signal in Hz
+
     phi : float
         phase shift (in rad)
+
     offset : float
         offset of the signal
 
@@ -457,8 +550,10 @@ def fit_sin_func(t,data,f):
     ----------
     t : 1-D sequence of floats
         contains the time data
+
     data : 1-D sequence of floats
         contains the data to fit
+
     f : float
         frequency of the measurement in Hz
 
@@ -466,10 +561,13 @@ def fit_sin_func(t,data,f):
     -------
     ampli : float
         fitted amplitude of the sine perturbation
+
     freq : float
         fitted frequency of the signal in Hz
+
     phi : float
         fitted phase shift (in rad)
+
     offset : float
         fitted offset of the signal
     """    
@@ -489,6 +587,7 @@ def get_complex_impedance(df,f):
     ----------
     df : DataFrame
         Dataframe containing the tj_file output from ZimT
+
     f : float
         frequency of the measurement in Hz
 
@@ -546,23 +645,40 @@ def make_df_Var(path_Var_file):
 
     return df
 
-def SIMsalabim_nrj_diag(num_fig,data_var,th_TL_left,th_TL_right,pic_save_name,save_yes):
+def SIMsalabim_nrj_diag(num_fig,data_Var,th_TL_left,th_TL_right,Vext='nan',Background_color=True,no_axis=True,legend=True,pic_save_name='energy_diagram.jpg',save_yes=False):
     """"Make energy diagram plot from Var_file output SIMsalabim
 
     Parameters
     ----------
     num_fig : int
         figure number where to plot the energy diagram
-    data_var : DataFrame
+
+    data_Var : DataFrame
         Panda Dataframe containing the Var_file output from SIMsalabim (see function "make_df_Var")
+
     th_TL_left : float
         Thickness of the left transport layer
+
     th_TL_right : float
         Thickness of the right transport layer
+
+    Vext : float
+        float to define the voltage at which the densities will be plotted if Vext='nan' then take Vext as max(Vext), if Vext does not exist we plot the closest voltage, default 'nan'
+
+    Background_color: bool, optional
+        Add nice background color to highlight the layer structure, default True
+
+    no_axis : bool, optional
+        Chose to show axis or not, default True
+
+    legend : bool, optional
+        Display legend or not, by default True
+
     pic_save_name : str
-        name of the file where the figure is saved
+        name of the file where the figure is saved, default 'energy_diagram.jpg'
+
     save_yes : bool
-        If True, save energy diagram as an image with the  file name defined by "pic_save_name" 
+        If True, save energy diagram as an image with the  file name defined by "pic_save_name" , default False
     """    
     
     line_thick = 3
@@ -572,38 +688,60 @@ def SIMsalabim_nrj_diag(num_fig,data_var,th_TL_left,th_TL_right,pic_save_name,sa
     color_pero = '#ba0000'
     color_electrode ='#999999'
 
+    # Check for specific 'Vext'
+    if Vext == 'nan':
+        Vext = max(data_Var['Vext'])
+        print('\n')
+        print('In SIMsalabim_nrj_diag function')
+        print('Vext was not specified so Vext = {:.2f} V was plotted'.format(Vext))
+    
+    data_Var = data_Var[abs(data_Var.Vext -Vext) == min(abs(data_Var.Vext -Vext))]
+    data_Var = data_Var.reset_index(drop=True)
+    if min(abs(data_Var.Vext -Vext)) != 0:
+        print('Vext = {:.2f} V was not found so {:.2f} was plotted'.format(Vext,data_Var['Vext'][0]))
+
+    # Convert in nm
+    data_Var['x'] = data_Var['x'] * 1e9
+    
+
     # Plotting
     plt.figure(num_fig)
     ax_nrj_diag = plt.axes()
-    # ax_nrj_diag.plot('x','Evac',data=data_var,label = r'E$_{vac}$',linestyle='-',linewidth=2,color = 'k')
-    ax_nrj_diag.plot('x','Ec',data=data_var,label = r'E$_{c}$',linestyle='-', linewidth=line_thick,color = 'k')
-    ax_nrj_diag.plot('x','Ev',data=data_var,label = r'E$_{v}$',linestyle='-', linewidth=line_thick,color = 'k')
-    ax_nrj_diag.plot('x','phin',data=data_var,label = r'E$_{fn}$',linestyle='--',linewidth=line_thick,color = 'k')
-    ax_nrj_diag.plot('x','phip',data=data_var,label = r'E$_{fp}$',linestyle='--',linewidth=line_thick,color = 'k')
-    TL_left = data_var[data_var['x']<th_TL_left]
-    TL_right = data_var[data_var['x']>max(data_var['x'])-th_TL_right]
-    AL = data_var[data_var['x']<max(data_var['x'])-th_TL_right]
-    AL = AL[AL['x']>th_TL_left]
-    ax_nrj_diag.fill_between(TL_left['x'],TL_left['Ec'],y2=0,color=color_nTL)
-    ax_nrj_diag.fill_between(TL_left['x'],TL_left['Ev'],y2=-8,color=color_nTL)
-    ax_nrj_diag.fill_between(TL_right['x'],TL_right['Ec'],y2=0,color=color_pTL)
-    ax_nrj_diag.fill_between(TL_right['x'],TL_right['Ev'],y2=-8,color=color_pTL)
-    ax_nrj_diag.fill_between(AL['x'],AL['Ec'],y2=0,color=color_pero)
-    ax_nrj_diag.fill_between(AL['x'],AL['Ev'],y2=-8,color=color_pero)
-    ax_nrj_diag.plot([-10,0],[min(data_var['phin']),min(data_var['phin'])],color='k')
-    ax_nrj_diag.plot([max(data_var['x']),max(data_var['x'])+10],[max(data_var['phip']),max(data_var['phip'])],color='k')
-    ax_nrj_diag.fill_between([-10,0],[min(data_var['phin']),min(data_var['phin'])],y2=-8,color=color_electrode)
-    ax_nrj_diag.fill_between([max(data_var['x']),max(data_var['x'])+10],[max(data_var['phip']),max(data_var['phip'])],y2=-8,color=color_electrode)
-    # plt.axhline(y=max(data_var['phip']), color='k', linestyle='-')
+    # ax_nrj_diag.plot('x','Evac',data=data_Var,label = r'E$_{vac}$',linestyle='-',linewidth=2,color = 'k')
+    ax_nrj_diag.plot('x','Ec',data=data_Var,label = r'E$_{c}$',linestyle='-', linewidth=line_thick,color = 'k')
+    ax_nrj_diag.plot('x','Ev',data=data_Var,label = r'E$_{v}$',linestyle='-', linewidth=line_thick,color = 'k')
+    ax_nrj_diag.plot('x','phin',data=data_Var,label = r'E$_{fn}$',linestyle='--',linewidth=line_thick,color = 'k')
+    ax_nrj_diag.plot('x','phip',data=data_Var,label = r'E$_{fp}$',linestyle='--',linewidth=line_thick,color = 'k')
+    
+    if Background_color:
+        th_TL_left = th_TL_left* 1e9
+        th_TL_right = th_TL_right* 1e9
+        TL_left = data_Var[data_Var['x']<th_TL_left]
+        TL_right = data_Var[data_Var['x']>max(data_Var['x'])-th_TL_right]
+        AL = data_Var[data_Var['x']<max(data_Var['x'])-th_TL_right]
+        AL = AL[AL['x']>th_TL_left]
+        ax_nrj_diag.fill_between(TL_left['x'],TL_left['Ec'],y2=0,color=color_nTL)
+        ax_nrj_diag.fill_between(TL_left['x'],TL_left['Ev'],y2=-8,color=color_nTL)
+        ax_nrj_diag.fill_between(TL_right['x'],TL_right['Ec'],y2=0,color=color_pTL)
+        ax_nrj_diag.fill_between(TL_right['x'],TL_right['Ev'],y2=-8,color=color_pTL)
+        ax_nrj_diag.fill_between(AL['x'],AL['Ec'],y2=0,color=color_pero)
+        ax_nrj_diag.fill_between(AL['x'],AL['Ev'],y2=-8,color=color_pero)
+        ax_nrj_diag.plot([-10,0],[min(data_Var['phin']),min(data_Var['phin'])],color='k')
+        ax_nrj_diag.plot([max(data_Var['x']),max(data_Var['x'])+10],[max(data_Var['phip']),max(data_Var['phip'])],color='k')
+        ax_nrj_diag.fill_between([-10,0],[min(data_Var['phin']),min(data_Var['phin'])],y2=-8,color=color_electrode)
+        ax_nrj_diag.fill_between([max(data_Var['x']),max(data_Var['x'])+10],[max(data_Var['phip']),max(data_Var['phip'])],y2=-8,color=color_electrode)
+    # plt.axhline(y=max(data_Var['phip']), color='k', linestyle='-')
 
     # Hide axis and spines
-    ax_nrj_diag.get_xaxis().set_visible(False)
-    ax_nrj_diag.get_yaxis().set_visible(False)
-    for sides in ['right','left','top','bottom']:
-        ax_nrj_diag.spines[sides].set_visible(False)
+    if no_axis:
+        ax_nrj_diag.get_xaxis().set_visible(False)
+        ax_nrj_diag.get_yaxis().set_visible(False)
+        for sides in ['right','left','top','bottom']:
+            ax_nrj_diag.spines[sides].set_visible(False)
 
     # Legend
-    plt.legend(loc='center',frameon=False,ncol = 2, bbox_to_anchor=(0.52,1.02),fontsize = 40)
+    if legend:
+        plt.legend(loc='center',frameon=False,ncol = 2, bbox_to_anchor=(0.52,1.02),fontsize = 40)
     plt.tight_layout()
 
     # Save file
@@ -617,35 +755,50 @@ def SIMsalabim_JVs_plot(num_fig,data_JV,x='Vext',y=['Jext'],xlimits=[],ylimits=[
     ----------
     num_fig : int
         number of the fig to plot JV
+
     data_JV : DataFrame
         Panda DataFrame containing JV_file
+
     x : str, optional
         xaxis data  (default = 'Vext'), by default 'Vext'
+
     y : list of str, optional
         yaxis data can be multiple like ['Jext','Jbimo']  (default = ['Jext']), by default ['Jext']
+
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
+
     ylimits : list, optional
         y axis limits if = [] it lets python chose limits, by default []
+
     plot_type : int, optional
         type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
     labels : str, optional
         label of the JV, by default ''
+
     colors : str, optional
         color for the JV line, by default 'b'
+
     line_type : list, optional
         type of line for simulated data plot
         size line_type need to be = size(y), by default ['-']
+
     mark : str, optional
         type of Marker for the JV, by default ''
+
     legend : bool, optional
         Display legend or not, by default True
+
     plot_jvexp : bool, optional
         plot an experimental JV or not, by default False
+
     data_JVexp : [type], optional
         Panda DataFrame containing experimental JV_file with 'V' the voltage and 'J' the current, by default pd.DataFrame()
+
     save_yes : bool, optional
         If True, save JV as an image with the  file name defined by "pic_save_name", by default False
+
     pic_save_name : str, optional
         name of the file where the figure is saved, by default 'JV.jpg'
     """    
@@ -696,87 +849,193 @@ def SIMsalabim_JVs_plot(num_fig,data_JV,x='Vext',y=['Jext'],xlimits=[],ylimits=[
     if save_yes:
         plt.savefig(pic_save_name,dpi=300,transparent=True)
 
-def SIMsalabim_dens_plot(num_fig,data_Var,Vext='nan',y=['n','p'],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],legend=True,save_yes=False,pic_save_name='density.jpg'):
-    """Make Var_plot for SIMsalabim 
+def SIMsalabim_dens_plot(num_fig,data_Var,Vext=['nan'],y=['n','p'],xlimits=[],ylimits=[],x_unit='nm',y_unit='cm^-3',plot_type=0,labels='',colors='b',colorbar_type='None',colorbar_display=False,line_type = ['-','--'],legend=True,save_yes=False,pic_save_name='density.jpg'):
+    """Make Var_plot for SIMsalabim
 
     Parameters
     ----------
     num_fig : int
         number of the fig to plot JV
+
     data_JV : DataFrame
         Panda DataFrame containing JV_file
+
     Vext : float
-        float to define the voltage at which the densities will be plotted if Vext='nan' then take Vext as max(Vext), if Vext does not exist we plot the closest voltage, default 'nan'
+        float to define the voltage at which the densities will be plotted if t='nan' then taketVext as max(t), iftVext does not exist we plot the closest voltage, default ['nan']
+
     y : list of str, optional
         yaxis data can be multiple like ['n','p'], by default ['n','p']
+
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
+
     ylimits : list, optional
         y axis limits if = [] it lets python chose limits, by default []
+
+    x_unit : str, optional
+        specify unit of the x-axis either ['nm','um','m'], by default 'nm'
+
+    y_unit : str, optional
+        specify unit of the y-axis either ['cm^-3','m^-3'], by default 'cm^-3'
+
     plot_type : int, optional
         type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
     labels : str, optional
         label of the line, by default ''
+
     colors : str, optional
         color for the line, by default 'b'
+    
+    colorbar_type : str, optional
+        define the type of colorbar to use for the plot ['None','log','lin'], by default 'None'
+    
+    colorbar_display : bool, optional
+        chose to display colormap or not, by default False
+
     line_type : list, optional
         type of line for the plot
         size line_type need to be = size(y), by default ['-']
+
     legend : bool, optional
         Display legend or not, by default True
+
     save_yes : bool, optional
         If True, save density plot as an image with the  file name defined by "pic_save_name", by default False
+
     pic_save_name : str, optional
         name of the file where the figure is saved, by default 'density.jpg'
     """    
     
     if len(y) > len(line_type):
+        print('\n')
+        print('In SIMsalabim_dens_plot function')
         print('Invalid line_type list, we meed len(y) == len(line_type)')
         print('We will use default line type instead')
         line_type = []
         for counter, value in enumerate(y):
             line_type.append('-')
 
-    if Vext == 'nan':
-        Vext = max(data_Var['Vext'])
-        print('Vext was not specified so Vext = {:.2f} V was plotted'.format(Vext))
+    if Vext == ['nan']:
+        Vext = [max(data_Var['Vext'])]
+        print('\n')
+        print('In SIMsalabim_dens_plot function')
+        print('V was not specified so Vext = {:.2e} V was plotted'.format(Vext[0]))
+
+
+    # Convert in x-axis
+    if x_unit == 'nm':
+        data_Var['x'] = data_Var['x'] * 1e9
+    elif x_unit == 'um':
+        data_Var['x'] = data_Var['x'] * 1e6
+    elif x_unit == 'm':
+        pass
+    else:
+        print('\n')
+        print('In SIMsalabim_dens_plot function.')
+        print('x_unit is wrong so [m] is used. ')
     
-    data_Var = data_Var[abs(data_Var.Vext -Vext) == min(abs(data_Var.Vext -Vext))]
-    data_Var = data_Var.reset_index(drop=True)
-    if min(abs(data_Var.Vext -Vext)) != 0:
-        print('Vext = {:.2f} V was not found so {:.2f} was plotted'.format(Vext,data_Var['Vext'][0]))
+    # Convert in y-axis
+    if y_unit == 'cm^-3':
+        convert_factor = 1e6
+    elif y_unit == 'm^-3':
+        convert_factor = 1
+    else:
+        print('\n')
+        print('In SIMsalabim_dens_plot function.')
+        print('y_unit is wrong so [m^-3] is used. ')
+        convert_factor = 1
     
-    # print(data_Var)
-    plt.figure(num_fig)
-    ax_Vars_plot = plt.axes()
-    for i,line in zip(y,line_type):
-        if plot_type == 1:
-            ax_Vars_plot.semilogx(data_Var['x'],data_Var[i]/1e6,color=colors,label=labels,linestyle=line)
-                       
+    # Prepare the colorbar is there is any
+    if colorbar_type == 'log':
+        Vext_bar = data_Var['Vext']
+        Vext_bar = np.asarray(Vext_bar.drop_duplicates())
+        norm = mp.colors.LogNorm(vmin=np.min(Vext_bar[1]),vmax=np.max(Vext_bar))
+        c_m = mp.cm.viridis# choose a colormap
+        s_m = mp.cm.ScalarMappable(cmap=c_m, norm=norm)# create a ScalarMappable and initialize a data structure
+        s_m.set_array([])
+    elif colorbar_type == 'lin':
+        Vext_bar = data_Var['Vext']
+        Vext_bar = np.asarray(Vext_bar.drop_duplicates())
+        norm = mp.colors.Normalize(vmin=np.min(Vext_bar),vmax=np.max(Vext_bar))
+        c_m = mp.cm.viridis# choose a colormap
+        s_m = mp.cm.ScalarMappable(cmap=c_m, norm=norm) # create a ScalarMappable and initialize a data structure
+        s_m.set_array([])
+    elif colorbar_type == 'None':
+        pass
+    else:
+        print('Wrong colorbar_type input')
+
+       
+    for V in Vext:
+        data_Var_dum = data_Var[abs(data_Var.Vext -V) == min(abs(data_Var.Vext -V))]
+        data_Var_dum = data_Var_dum.reset_index(drop=True)
+        if min(abs(data_Var.Vext -V)) != 0:
+            print('Vext = {:.2e} V was not found so {:.2e} V was plotted'.format(V,data_Var_dum['Vext'][0]))
         
-        elif plot_type == 2:
-            ax_Vars_plot.semilogy(data_Var['x'],data_Var[i]/1e6,color=colors,label=labels,linestyle=line)   
-            
-        elif plot_type == 3:
-            ax_Vars_plot.loglog(data_Var['x'],data_Var[i]/1e6,color=colors,label=labels,linestyle=line)
-            
+        plt.figure(num_fig)
+        ax_Vars_plot = plt.axes()
+        if (colorbar_type == 'log' or colorbar_type == 'lin') and colorbar_display:
+            colorline = s_m.to_rgba(V)
         else:
-            ax_Vars_plot.plot(data_Var['x'],data_Var[i]/1e6,color=colors,label=labels,linestyle=line)
+            colorline = colors
+
+        put_label = True
+        for i,line in zip(y,line_type):
+            if put_label:
+                labels = labels
+                put_label = False
+            else:
+                labels = ''
+
+            if plot_type == 1:
+                ax_Vars_plot.semilogx(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)
+                        
+            
+            elif plot_type == 2:
+                ax_Vars_plot.semilogy(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)   
+                
+            elif plot_type == 3:
+                ax_Vars_plot.loglog(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)
+                
+            else:
+                ax_Vars_plot.plot(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)
             
     
     # legend
     if legend == True:
-        # plt.legend(loc='best',frameon=False,fontsize = 30)
-        from matplotlib.legend import Legend
-        leg = Legend(ax_Vars_plot, ['-','--'], ['line C', 'line D'],
-             loc='lower right', frameon=False)
-        ax_Vars_plot.add_artist(leg);
+        plt.legend(loc='best',frameon=False,fontsize = 30)
+    
+    # Add colorbar if needed
+    if (colorbar_type == 'log' or colorbar_type == 'lin') and colorbar_display:
+        cbar = plt.colorbar(s_m)
+        cbar.set_label('Vext [V]')
+
+    # Set axis limits
     if xlimits != []:
         plt.xlim(xlimits)
     if ylimits != []:
         plt.ylim(ylimits)
     plt.grid(b=True,which='both')
-    plt.xlabel('x [nm]')
+    
+    # Label x-axis
+    if x_unit == 'nm':
+        plt.xlabel('x [nm]')
+    elif x_unit == 'um':
+        plt.xlabel('x [$\mu$m]')
+    elif x_unit == 'm':
+        plt.xlabel('x [m]')
+    else:
+        plt.xlabel('x [nm]')
+    
+    # Label y-axis
+    if y_unit == 'cm^-3':
+        plt.ylabel('Density [cm$^{-3}$]')
+    elif y_unit == 'm^-3':
+        plt.ylabel('Density [m$^{-3}$]')
+    else:
+        plt.ylabel('Density [m$^{-3}$]')
+    
     plt.ylabel('Density [cm$^{-3}$]')
     plt.tight_layout()
     if save_yes:
@@ -795,29 +1054,41 @@ def zimt_tj_plot(num_fig,data_tj,x='t',y=['Jext'],xlimits=[],ylimits=[],plot_typ
     ----------
     num_fig : int
         number of the fig to plot tj
+
     data_tj : DataFrame
         Panda DataFrame containing tj_file
+
     x : str, optional
         xaxis data, by default 't'
+
     y : list of str, optional
         yaxis data can be multiple like ['Jext','Jncat'], by default ['Jext']
+
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
+
     ylimits : list, optional
         y axis limits if = [] it lets python chose limits, by default []
+
     plot_type : int, optional
         type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
     labels : str, optional
         label of the tj, by default ''
+
     colors : str, optional
         color for the JV line, by default 'b'
+
     line_type : list, optional
         type of line used for the plot
         size line_type need to be = size(y), by default ['-']
+
     mark : str, optional
         type of Marker used for the plot, by default ''
+
     legend : bool, optional
         Display legend or not, by default True
+
     pic_save_name : str, optional
         name of the file where the figure is saved, by default 'transient.jpg'
     """  
@@ -868,31 +1139,44 @@ def zimt_tj_JV_plot(num_fig,data_tj,x='Vext',y=['Jext'],xlimits=[],ylimits=[],pl
     ----------
     num_fig : int
         number of the fig to plot tj
+
     data_tj : DataFrame
         Panda DataFrame containing tj_file
+
     x : str, optional
-        xaxis data, by default 'Va'
+        xaxis data, by default 'Vext'
+
     y : list of str, optional
         yaxis data can be multiple like ['Jext','Jncat'], by default ['Jext']
+
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
+
     ylimits : list, optional
         y axis limits if = [] it lets python chose limits, by default []
+
     plot_type : int, optional
         type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
     labels : str, optional
         label of the tj, by default ''
+
     colors : str, optional
         color for the JV line, by default 'b'
+
     line_type : list, optional
         type of line used for the plot
         size line_type need to be = size(y), by default ['-']
+
     mark : str, optional
         type of Marker used for the plot, by default ''
+
     legend : bool, optional
         Display legend or not, by default True
+
     save_yes : bool, optional
         If True, save JV as an image with the  file name defined by "pic_save_name", by default False
+
     pic_save_name : str, optional
         name of the file where the figure is saved, by default 'transient_JV.jpg'
     """  
@@ -942,31 +1226,44 @@ def zimt_Voltage_transient_plot(num_fig,data_tj,x='t',y=['Vext'],xlimits=[],ylim
     ----------
     num_fig : int
         number of the fig to plot tj
+
     data_tj : DataFrame
         Panda DataFrame containing tj_file
+
     x : str, optional
         xaxis data, by default 't'
+
     y : list of str, optional
         yaxis data can be multiple like ['Vext','Va'], by default ['Vext']
+
     xlimits : list, optional
         x axis limits if = [] it lets python chose limits, by default []
+
     ylimits : list, optional
         y axis limits if = [] it lets python chose limits, by default []
+
     plot_type : int, optional
         type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
     labels : str, optional
         label of the tj, by default ''
+
     colors : str, optional
         color for the JV line, by default 'b'
+
     line_type : list, optional
         type of line used for the plot
         size line_type need to be = size(y), by default ['-']
+
     mark : str, optional
         type of Marker used for the plot, by default ''
+
     legend : bool, optional
         Display legend or not, by default True
+
     save_yes : bool, optional
         If True, save JV as an image with the  file name defined by "pic_save_name", by default False
+
     pic_save_name : str, optional
         name of the file where the figure is saved, by default 'transient_volt.jpg'
     """  
@@ -1007,7 +1304,197 @@ def zimt_Voltage_transient_plot(num_fig,data_tj,x='t',y=['Vext'],xlimits=[],ylim
     if save_yes:
         plt.savefig(pic_save_name,dpi=300,transparent=True)
 
+def zimt_dens_plot(num_fig,data_Var,time=['nan'],y=['n','p'],xlimits=[],ylimits=[],x_unit='nm',y_unit='cm^-3',plot_type=0,labels='',colors='b',colorbar_type='None',colorbar_display=False,line_type = ['-','--'],legend=True,save_yes=False,pic_save_name='density.jpg'):
+    """Make Var_plot for ZimT
 
+    Parameters
+    ----------
+    num_fig : int
+        number of the fig to plot JV
+
+    data_JV : DataFrame
+        Panda DataFrame containing JV_file
+
+    time : float
+        float to define the voltage at which the densities will be plotted if t='nan' then takettime as max(t), ifttime does not exist we plot the closest voltage, default ['nan']
+
+    y : list of str, optional
+        yaxis data can be multiple like ['n','p'], by default ['n','p']
+
+    xlimits : list, optional
+        x axis limits if = [] it lets python chose limits, by default []
+
+    ylimits : list, optional
+        y axis limits if = [] it lets python chose limits, by default []
+
+    x_unit : str, optional
+        specify unit of the x-axis either ['nm','um','m'], by default 'nm'
+
+    y_unit : str, optional
+        specify unit of the y-axis either ['cm^-3','m^-3'], by default 'cm^-3'
+
+    plot_type : int, optional
+        type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
+    labels : str, optional
+        label of the line, by default ''
+
+    colors : str, optional
+        color for the line, by default 'b'
+    
+    colorbar_type : str, optional
+        define the type of colorbar to use for the plot ['None','log','lin'], by default 'None'
+    
+    colorbar_display : bool, optional
+        chose to display colormap or not, by default False
+
+    line_type : list, optional
+        type of line for the plot
+        size line_type need to be = size(y), by default ['-']
+
+    legend : bool, optional
+        Display legend or not, by default True
+
+    save_yes : bool, optional
+        If True, save density plot as an image with the  file name defined by "pic_save_name", by default False
+
+    pic_save_name : str, optional
+        name of the file where the figure is saved, by default 'density.jpg'
+    """    
+    
+    if len(y) > len(line_type):
+        print('\n')
+        print('In zimt_dens_plot function')
+        print('Invalid line_type list, we meed len(y) == len(line_type)')
+        print('We will use default line type instead')
+        line_type = []
+        for counter, value in enumerate(y):
+            line_type.append('-')
+
+    if time == ['nan']:
+        time = [max(data_Var['time'])]
+        print('\n')
+        print('In zimt_dens_plot function')
+        print('t was not specified so time = {:.2e} s was plotted'.format(time[0]))
+
+
+    # Convert in x-axis
+    if x_unit == 'nm':
+        data_Var['x'] = data_Var['x'] * 1e9
+    elif x_unit == 'um':
+        data_Var['x'] = data_Var['x'] * 1e6
+    elif x_unit == 'm':
+        pass
+    else:
+        print('\n')
+        print('In zimt_dens_plot function.')
+        print('x_unit is wrong so [m] is used. ')
+    
+    # Convert in y-axis
+    if y_unit == 'cm^-3':
+        convert_factor = 1e6
+    elif y_unit == 'm^-3':
+        convert_factor = 1
+    else:
+        print('\n')
+        print('In zimt_dens_plot function.')
+        print('y_unit is wrong so [m^-3] is used. ')
+        convert_factor = 1
+    
+    # Prepare the colorbar is there is any
+    if colorbar_type == 'log':
+        time_bar = data_Var['time']
+        time_bar = np.asarray(time_bar.drop_duplicates())
+        norm = mp.colors.LogNorm(vmin=np.min(time_bar[1]),vmax=np.max(time_bar))
+        c_m = mp.cm.viridis# choose a colormap
+        s_m = mp.cm.ScalarMappable(cmap=c_m, norm=norm)# create a ScalarMappable and initialize a data structure
+        s_m.set_array([])
+    elif colorbar_type == 'lin':
+        time_bar = data_Var['time']
+        time_bar = np.asarray(time_bar.drop_duplicates())
+        norm = mp.colors.Normalize(vmin=np.min(time_bar),vmax=np.max(time_bar))
+        c_m = mp.cm.viridis# choose a colormap
+        s_m = mp.cm.ScalarMappable(cmap=c_m, norm=norm) # create a ScalarMappable and initialize a data structure
+        s_m.set_array([])
+    elif colorbar_type == 'None':
+        pass
+    else:
+        print('Wrong colorbar_type input')
+
+       
+    for t in time:
+        data_Var_dum = data_Var[abs(data_Var.time -t) == min(abs(data_Var.time -t))]
+        data_Var_dum = data_Var_dum.reset_index(drop=True)
+        if min(abs(data_Var.time -t)) != 0:
+            print('time = {:.2e} s was not found so {:.2e} was plotted'.format(t,data_Var_dum['time'][0]))
+        
+        plt.figure(num_fig)
+        ax_Vars_plot = plt.axes()
+        if (colorbar_type == 'log' or colorbar_type == 'lin') and colorbar_display:
+            colorline = s_m.to_rgba(t)
+        else:
+            colorline = colors
+        
+        put_label = True
+        for i,line in zip(y,line_type):
+            if put_label:
+                labels = labels
+                put_label = False
+            else:
+                labels = ''
+
+            if plot_type == 1:
+                ax_Vars_plot.semilogx(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)
+                        
+            
+            elif plot_type == 2:
+                ax_Vars_plot.semilogy(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)   
+                
+            elif plot_type == 3:
+                ax_Vars_plot.loglog(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)
+                
+            else:
+                ax_Vars_plot.plot(data_Var_dum['x'],data_Var_dum[i]/convert_factor,color=colorline,label=labels,linestyle=line)
+            
+    
+    # legend
+    if legend == True:
+        plt.legend(loc='best',frameon=False,fontsize = 30)
+    
+    # Add colorbar if needed
+    if (colorbar_type == 'log' or colorbar_type == 'lin') and colorbar_display:
+        cbar = plt.colorbar(s_m)
+        cbar.set_label('Time [s]')
+
+    # Set axis limits
+    if xlimits != []:
+        plt.xlim(xlimits)
+    if ylimits != []:
+        plt.ylim(ylimits)
+    plt.grid(b=True,which='both')
+    
+    # Label x-axis
+    if x_unit == 'nm':
+        plt.xlabel('x [nm]')
+    elif x_unit == 'um':
+        plt.xlabel('x [$\mu$m]')
+    elif x_unit == 'm':
+        plt.xlabel('x [m]')
+    else:
+        plt.xlabel('x [nm]')
+    
+    # Label y-axis
+    if y_unit == 'cm^-3':
+        plt.ylabel('Density [cm$^{-3}$]')
+    elif y_unit == 'm^-3':
+        plt.ylabel('Density [m$^{-3}$]')
+    else:
+        plt.ylabel('Density [m$^{-3}$]')
+    
+    plt.ylabel('Density [cm$^{-3}$]')
+    plt.tight_layout()
+    if save_yes:
+        plt.savefig(pic_save_name,dpi=300,transparent=True)
 
 ######################################################################
 #################### Useful for multiprocessing ######################
@@ -1032,6 +1519,7 @@ def clean_up_output(filename_start,path):
     ----------
     filename_start : str
         string containing the begining of the filename to delete
+
     path : str
         path to the directory where we clean the output
     """ 
@@ -1046,8 +1534,10 @@ def Store_output_in_folder(filenames,folder_name,path):
     ----------
     filenames : list of str
         list of string containing the name of the files to move
+
     folder_name : str
         name of the folder where we store the output files
+        
     path : str
         directory of the folder_name (creates one if it does not already exist)
     """    

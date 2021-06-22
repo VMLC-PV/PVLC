@@ -1,9 +1,9 @@
-###################################################
-######### Test SIMsalabim versus scaps ############
-###################################################
+#####################################################
+####### Test SIMsalabim and ZimT physics ############
+#####################################################
 # by Vincent M. Le Corre
 # Package import
-import os,sys,platform,tqdm,parmap,multiprocessing,subprocess,shutil,math
+import os,sys,platform,tqdm,parmap,multiprocessing,subprocess,shutil,math,warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,13 +11,15 @@ import matplotlib.cm as cm
 import matplotlib.lines as mlines
 from matplotlib.lines import Line2D
 from time import time
-import plot_settings_screen
 from scipy import stats
-from VLC_useful_func import sci_notation, run_SIMsalabim, SIMsalabim_nrj_diag, SIMsalabim_JVs_plot, make_df_JV, SIMsalabim_dens_plot, make_df_Var, make_df_JV
-from VLC_useful_func import *
-import warnings
 from scipy import constants
 from pathlib import Path
+import scipy.optimize
+# Package by VLC
+import plot_settings_screen
+from VLC_useful_func import *
+
+
 # Don't show warnings
 warnings.filterwarnings("ignore")
 
@@ -48,8 +50,8 @@ fig_idx = 0
 
 # Inputs
 curr_dir = os.getcwd()                      # Current working directory
-path2SIMsalabim = 'Simulation_program/DDSuite_v400/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
-path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
+path2SIMsalabim = 'Simulation_program/DDSuite_v405/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+path2ZimT = 'Simulation_program/DDSuite_v405/ZimT'+slash                      # Path to ZimT in curr_dir
 ext_save_pic = '.jpg'
 
 # Chose test to run:
@@ -86,6 +88,7 @@ if Test_gen_profile:
                 
         str_lst = ['-L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -TLsAbsorb '+str(TLsAbsorb)+' -OutputRatio 100 -Gen_profile  '+gen_profiles[0],
         '-L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -TLsAbsorb '+str(TLsAbsorb)+' -OutputRatio 100 -Gen_profile  '+gen_profiles[1],'-L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -TLsAbsorb '+str(TLsAbsorb)+' -OutputRatio 100 -grad 10 -Gen_profile  '+gen_profiles[2]]
+
         # Simulation input
         run_simu = True     
         start = time()
@@ -178,7 +181,7 @@ if Test_SCLC_MottGurney:
         labels.append('{:.1e}'.format(i))
         JV_files.append('JV_mu_{:.1e}.dat'.format(i))
         Var_files.append('Var_mu_{:.1e}.dat'.format(i))
-        str_lst.append( '-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps_r)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -Rseries 0 -Gehp 0 -Vmin 0.001 -Vmax 25 -Vacc -0.1 -Vdistribution 2 -NJV 50 -until_Voc 0 -MaxRangeJ 5e-6 -mun_0 {:.1e} -mup_0 {:.1e} -JV_file JV_mu_{:.1e}.dat -Var_file Var_mu_{:.1e}.dat'.format(i,i,i,i))
+        str_lst.append( '-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps_r)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -Rseries 0 -Gehp 0 -Vmin 0.001 -Vmax 25 -Vacc -0.1 -Vdistribution 2 -NJV 50 -until_Voc 0 -tolJ 5e-6 -mun_0 {:.1e} -mup_0 {:.1e} -JV_file JV_mu_{:.1e}.dat -Var_file Var_mu_{:.1e}.dat'.format(i,i,i,i))
         sys_lst.append(system)
         path_lst.append(curr_dir+slash+path2SIMsalabim)
 
@@ -252,7 +255,7 @@ if Test_SCLC_Traps:
         labels.append('{:.1e}'.format(i))
         JV_files.append('JV_Bulk_tr_{:.1e}.dat'.format(i))
         Var_files.append('Var_Bulk_tr_{:.1e}.dat'.format(i))
-        str_lst.append( '-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps_r)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -mun_0 '+str(mun_0)+' -mup_0 '+str(mun_0)+' -Tr_type_B '+str(Tr_type_B)+' -Nc '+str(Nc)+' -Rseries 0 -Gehp 0 -Vmin 1e-3 -Vmax 30 -Vdistribution 2 -NJV 100 -MaxRangeJ 1e-4 -NP 1000 -Vacc -0.1 -until_Voc 0 -Bulk_tr {:.1e} -JV_file JV_Bulk_tr_{:.1e}.dat -Var_file Var_Bulk_tr_{:.1e}.dat'.format(i,i,i))
+        str_lst.append( '-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps_r)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -mun_0 '+str(mun_0)+' -mup_0 '+str(mun_0)+' -Tr_type_B '+str(Tr_type_B)+' -Nc '+str(Nc)+' -Rseries 0 -Gehp 0 -Vmin 1e-3 -Vmax 30 -Vdistribution 2 -NJV 100 -tolJ 1e-4 -NP 1000 -Vacc -0.1 -until_Voc 0 -Bulk_tr {:.1e} -JV_file JV_Bulk_tr_{:.1e}.dat -Var_file Var_Bulk_tr_{:.1e}.dat'.format(i,i,i))
         sys_lst.append(system)
         path_lst.append(curr_dir+slash+path2SIMsalabim)
  
@@ -418,7 +421,7 @@ if Test_TPC:
     print('Start the Test TPC compare Jsc from ZimT and SIMsalabim:')
     from tVG_gen import zimt_light_decay
     # Simulation input
-    run_simu = False                                        # Rerun simu?
+    run_simu = True                                        # Rerun simu?
     plot_tjs = True                                        # make plot ?
     plot_output = False
     move_ouput_2_folder = True
@@ -576,9 +579,7 @@ if Test_RCtime:
     ########################################################
     ################## tjs_file ############################
     ########################################################
-    if plot_tjs:
-        from VLC_useful_func import monoExp
-        import scipy.optimize
+    if plot_tjs:        
         for Vfinal in Vfinals:
             idx = 0
             for Vstart in Vstarts:
@@ -589,11 +590,11 @@ if Test_RCtime:
                 data2fit['t'] = data2fit['t']-t_pic
                 data2fit = data2fit[data2fit.t >= 0]
                 # perform the fit
-                p0 = (1/Rseries*Cgeo, max(data2fit['Jext']), min(data2fit['Jext'])) # start with values near those we expect
-                params, cv = scipy.optimize.curve_fit(monoExp,data2fit['t'], data2fit['Jext'], p0)
+                p0 = (Rseries*Cgeo, max(data2fit['Jext']), min(data2fit['Jext'])) # start with values near those we expect
+                params, cv = scipy.optimize.curve_fit(MonoExpDecay,data2fit['t'], data2fit['Jext'], p0)
                 k, A, B = params
 
-                plt.plot(data2fit['t'], monoExp(data2fit['t'], k,A,B)/10, '--', label='RC-fit = {:.2e}'.format(1/k))
+                plt.plot(data2fit['t'], MonoExpDecay(data2fit['t'], k,A,B)/10, '--', label='RC-fit = {:.2e}'.format(k))
                 
                 zimt_tj_plot(fig_idx,data_tj,y=['Jext'],colors=colors[idx],plot_type=0,save_yes=True,legend=True,labels='RC-input = {:.2e}'.format(Rseries*Cgeo),pic_save_name = curr_dir+slash+'Test simulation/'+'test_RC_decay.jpg')
 

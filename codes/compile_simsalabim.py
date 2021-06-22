@@ -1,26 +1,32 @@
 ###################################################
-######### Test SIMsalabim versus scpas ############
+############### Compile SIMsalabim ################
 ###################################################
 # by Vincent M. Le Corre
 # Package import
-import os
-import sys
-import subprocess
-import warnings
+import os,sys,subprocess,warnings,platform
 from pathlib import Path
-# Don't show warnings
-warnings.filterwarnings("ignore")
-
-slash = '/'
-curr_dir = os.getcwd()                      # Current working directory
-path2SIMsalabim = 'Simulation_program/SIMsalabimv385'+slash    # Path to SIMsalabim in curr_dir
 
 
-os.chdir(Path(curr_dir+slash+path2SIMsalabim+slash+'Units'))
-subprocess.call('fpc InputOutputUtils.pp')
-subprocess.call('fpc TypesAndConstants.pp')
-subprocess.call('fpc NumericalUtils.pp')
+def compile_simsalabim():
+    # Don't show warnings
+    warnings.filterwarnings("ignore")
+    System = platform.system()                  # Operating system
+    curr_dir =  os.getcwd()                     # Current working directory
+    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/DDSuite_v403_OPV/SIMsalabim' # Path to SIMsalabim in curr_dir
 
-os.chdir(Path(curr_dir+slash+path2SIMsalabim))
-subprocess.call('fpc SIMsalabim.pas')
-os.chdir(Path(curr_dir))
+
+    os.chdir(path2SIMsalabim) # Go to SIMsalabim directory
+
+    # Compile depending on the operating system
+    if System == 'Windows':
+        subprocess.call('fpc SIMsalabim.pas')
+    elif System == 'Linux':
+        subprocess.check_call(('fpc SIMsalabim.pas').split())
+    else: print('Wrong system input')
+
+    os.chdir(Path(curr_dir)) # Come back to current directory
+
+
+if __name__ == '__main__':
+
+    compile_simsalabim()

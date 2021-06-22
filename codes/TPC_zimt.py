@@ -14,12 +14,13 @@ from scipy.optimize import curve_fit
 from scipy import constants
 from time import time
 from itertools import repeat
-# Don't show warnings
-warnings.filterwarnings("ignore")
-# Homemade package import
+# Package by VLC
 import plot_settings_screen
 from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,Store_output_in_folder,clean_up_output
 from tVG_gen import zimt_TPC
+
+# Don't show warnings
+warnings.filterwarnings("ignore")
 
 # Main Program
 def TPC():    

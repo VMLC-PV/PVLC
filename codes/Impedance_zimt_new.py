@@ -47,14 +47,13 @@ def Impedance():
 
     curr_dir = os.getcwd()                           # Current working directory
     path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash  # Path to ZimT
-    paperdata = curr_dir+slash+'Paper_Sim_Data.txt'  # Path to txt Data File to be added to C/f plot, if paper_comparison is enabled. header: 'f C' delimiter: ' '
 
     ## Physics constants
     q = constants.value(u'elementary charge')
     eps_0 = constants.epsilon_0
 
     ## Simulation input
-    run_simu = 1                                           # Rerun simu? (bool)
+    run_simu = True                                           # Rerun simu? (bool)
     plot_tjs = 0                                           # make tJ and tV plots? (bool)
     plot_output = 1                                        # make Nyquist and Bode plots? (bool)
     move_ouput_2_folder = True                             # (bool)
@@ -63,11 +62,11 @@ def Impedance():
     make_fit = False                                       # make fit dn/dt (bool)
     calc_capacitance = 1                                   # calculate capacitance? (bool)
     nFcm2 = 1                                              # Capacitance unit (bool)
-    paper_comparison = 0                                   # compare C/f with given data? (bool)
     L = 100e-9                                             # Device thickness (m)
+    L_LTL = 20e-9 # m
+    L_RTL = 20e-9 # m
     eps = 4                                              # active layer permittivity, same as in device_parameters.txt
-    area = 1e-6                                            # Device area (m^2), same as in device_parameters.txt
-    C_geo = (eps*eps_0*area/L)                             # geometric capacitance (Ohm)
+    C_geo = (eps*eps_0/(L-L_LTL-L_RTL))                             # geometric capacitance (Ohm)
     freqs1 = np.geomspace(1e2,1e4,num=15,endpoint=False)
     freqs2 = np.geomspace(1e4,1e9,num=20,endpoint=True)
     freqs = np.append(freqs1, freqs2)                      # frequencies to simulate (Hz)
@@ -107,8 +106,7 @@ def Impedance():
         # Generate tVG files 
         for freq in freqs:
             for Vapp in Vapps:
-                L_LTL = 0e-9 # m
-                L_RTL = 0e-9 # m
+                
                 CB = 4 # eV
                 VB = 6 # eV
                 W_L = 5 # eV
@@ -116,7 +114,7 @@ def Impedance():
                 mu = 1e-7 # m^2/Vs, zero field mobility
                 zimt_impedance(Vapp,Vamp,freq,Gen,steps=200,tVG_name=path2ZimT
                                +'tVG_{:.2f}V_f_{:.1e}Hz.txt'.format(Vapp,freq))
-                str_lst.append('-W_L '+str(W_L)+' -W_R '+str(W_R)+' -eps_r '+str(eps)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -mun_0 '+str(mu)+' -mup_0 '+str(mu)+' -CB '+str(CB)+' -VB '+str(VB)+' -Rseries '+str(0)+' -tVG_file '
+                str_lst.append('-eps_r '+str(eps)+' -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -tVG_file '
                                +'tVG_{:.2f}V_f_{:.1e}Hz.txt '.format(Vapp,freq)
                                +'-tj_file '
                                +'tj_{:.2f}V_f_{:.1e}Hz.dat '.format(Vapp,freq))
@@ -374,11 +372,11 @@ def Impedance():
 
         ## Bode plot C/f
         if nFcm2:
-            Cap_max = Cap_max/(area*1e-9/1e-4)  # to get nF/cm^2
-            Cap = Cap/(area*1e-9/1e-4)  # to get nF/cm^2
-            C_geo = C_geo/(area*1e-9/1e-4)  # to get nF/cm^2
+            Cap_max = Cap_max/(1e-9/1e-4)  # to get nF/cm^2
+            Cap = Cap/(1e-9/1e-4)  # to get nF/cm^2
+            C_geo = C_geo/(1e-9/1e-4)  # to get nF/cm^2
             for idx in range(len(Vapps)):
-                circ_fit[idx][2] = circ_fit[idx][2]/(area*1e-9/1e-4)
+                circ_fit[idx][2] = circ_fit[idx][2]/(1e-9/1e-4)
                     
         try:
             fig4, ax5 = plt.subplots(figsize=size_fig)
@@ -391,16 +389,12 @@ def Impedance():
             else:
                 ax5.set_yscale('log')
             for idx in range(len(Vapps)):
-                ax5.axhline(circ_fit[idx][2]*area, ls='--', c=colors1[idx])
+                ax5.axhline(circ_fit[idx][2], ls='--', c=colors1[idx])
                 ## Cap_max will be totally off when semi-circle hasn't reached its maximum
                 if np.isclose(circ_fit[idx][2], Cap_max[idx], rtol=.1):
-                    ax5.axhline(Cap_max[idx]*area, ls=':', c=colors1[idx])
-                ax5.semilogx(freqs, Cap[idx]*area, 'o-', color=colors1[idx], label='{:.1f} V, ZimT'.format(Vapps[idx]))
-            if paper_comparison:
-                with open(paperdata, 'r') as file:
-                    paper = pd.read_csv(file, sep=' ')
-                freq_paper, C_paper = paper['f'], paper['C']
-                ax5.plot(freq_paper, C_paper, 'r', label = 'Ruhstaller\'s simulation')
+                    ax5.axhline(Cap_max[idx], ls=':', c=colors1[idx])
+                ax5.semilogx(freqs, Cap[idx], 'o-', color=colors1[idx], label='{:.1f} V, ZimT'.format(Vapps[idx]))
+
             ## black lines for legend
             ax5.plot([], [], ls='--', c='k', label='equivalent circuit fit')
             ax5.plot([], [], ls=':', c='k', label='Nyquist interpolation')

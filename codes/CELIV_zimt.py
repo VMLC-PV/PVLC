@@ -38,7 +38,7 @@ def CELIV():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v403_OPV/ZimT'+slash                      # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
@@ -76,7 +76,7 @@ def CELIV():
         for Gen in Gens:
             for slope in slopes:
                 for Voffset in Voffsets:
-                    zimt_CELIV(1e-8,3e-6,Voffset,slope,1e-6,Gen,tpulse,1e-7,0,width_pulse = 6e-9,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
+                    zimt_CELIV(1e-8,3e-6,Voffset,slope,Gen,tpulse,1e-7,0,width_pulse = 6e-9,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
                     str_lst.append('-L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -tVG_file tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt -tj_file tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset,Gen,slope,Voffset))
                     sys_lst.append(system)
                     path_lst.append(curr_dir+slash+path2ZimT)
