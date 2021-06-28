@@ -3,10 +3,12 @@
 ################################################################
 # by Vincent M. Le Corre
 # Package import
+from unicodedata import name
 import pandas as pds
 import matplotlib.pyplot as plt
 import numpy as np 
 import math
+from pathlib import Path
 from scipy import integrate
 
 def gaussian_pulse(t, tpulse, width, Imax):
@@ -591,3 +593,38 @@ def zimt_impedance(Vapp,Vamp,freq,Gen,steps=100,tVG_name='tVG.txt'):
     tVG = pds.DataFrame(np.stack([t,np.asarray(V),np.asarray(G)]).T,columns=['t','Vext','Gehp'])
 
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e') 
+
+def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, Vamp, freq, drift_steps, Gen, tVG_name='tVG.txt'):
+    """Make tVG file for tid experiment
+
+    Parameters
+    ----------
+    Vfill : [float]
+        Filling voltage (unit: V)
+    tfill : [float]
+        Time of filling pulse (unit: s)
+    fill_steps : [float]
+        Number of steps in the filling steps (unit: none)
+    Vdrift : [float]
+        Drift voltage (unit: V) 
+    tdrift : [float]
+        Time of drifting (unit: s)
+    Vamp : [float]
+        Amplitude of perturbation voltage (unit V)
+    freq : [float]
+        frequency of the ac perturbation (unit: Hz)
+    drift_steps : [float]
+        Number of steps in one perturbation period (unit: none)
+    Gen : [type]
+        max generation rate (i.e. light intensity) of the gaussian pulse (unit: m^-3 s^-1)
+    tVG_name : str, optional
+    """
+    tspan_fill = np.linspace(0, tfill, fill_steps) 
+    Vspan_fill = np.empty(len(tspan_fill))
+    Vspan_fill.fill(Vfill)
+    
+    tspan_drift = np.linspace(tfill, tfill+tdrift, int(drift_steps*freq))
+    Vspan_drift = Vdrift + Vamp * np.sin(2*np.pi*freq*(tspan_drift-tdrift))
+
+    plt.plot(tspan_drift, Vspan_drift)
+    plt.show()

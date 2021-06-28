@@ -5,7 +5,9 @@
 *.pdf
 *.o
 /__pycache__
+/codes/__pycache__
 /codes/Simulation_program
+./vscode
 
 # Exceptions
 !*/device_parameters.txt

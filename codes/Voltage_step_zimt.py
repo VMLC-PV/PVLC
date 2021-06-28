@@ -165,7 +165,7 @@ def Voltage_step(L,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 
 if __name__ == '__main__':
-    Voltage_step(L=340e-9,num_fig=0,path2ZimT = 'Simulation_program/ZimT043_BETA_pero',Store_folder='test_output_Vstep')
+    Voltage_step(L=340e-9,num_fig=0,path2ZimT = 'Simulation_program/ZimT',Store_folder='test_output_Vstep')
     
     
     

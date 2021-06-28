@@ -38,7 +38,7 @@ def TPC():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash                      # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/ZimT'+slash                      # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
