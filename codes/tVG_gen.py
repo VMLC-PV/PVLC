@@ -619,12 +619,20 @@ def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, Vamp, freq, drift_steps, 
         max generation rate (i.e. light intensity) of the gaussian pulse (unit: m^-3 s^-1)
     tVG_name : str, optional
     """
-    tspan_fill = np.linspace(0, tfill, fill_steps) 
-    Vspan_fill = np.empty(len(tspan_fill))
-    Vspan_fill.fill(Vfill)
+    t_fill = np.linspace(0, tfill, fill_steps) 
+    V_fill = np.empty(len(t_fill))
+    V_fill.fill(Vfill)
     
-    tspan_drift = np.linspace(tfill, tfill+tdrift, int(drift_steps*freq))
-    Vspan_drift = Vdrift + Vamp * np.sin(2*np.pi*freq*(tspan_drift-tdrift))
+    t_drift = np.linspace(tfill, tfill+tdrift, int(drift_steps*freq))
+    V_drift = Vdrift + Vamp * np.sin(2*np.pi*freq*(t_drift-tdrift))
 
-    plt.plot(tspan_drift, Vspan_drift)
-    plt.show()
+    t = np.concatenate((t_fill, t_drift))
+    V = np.concatenate((V_fill, V_drift))
+    
+    G = np.empty(len(t))
+    G.fill(Gen)
+
+    tVG = pds.DataFrame(np.transpose([t, V, G]), columns=['t','Vext','Gehp'])
+
+    tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e') 
+    

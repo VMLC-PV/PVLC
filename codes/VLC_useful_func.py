@@ -323,6 +323,7 @@ def run_zimt(str2run,System,path=''):
     
     """
     curr_dir = os.getcwd()
+    print(path)
     os.chdir(path)
     FNULL = open(os.devnull, 'w')
     # stdout=FNULL, stderr=subprocess.STDOUT is used to turn of the display of zimt output on the terminal

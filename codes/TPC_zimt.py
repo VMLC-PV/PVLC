@@ -59,7 +59,7 @@ def TPC():
     sys_lst,str_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
     idx = 0
     start = time()
-    p = multiprocessing.Pool(max_jobs)
+    # p = multiprocessing.Pool(max_jobs)
 
     # Figures control
     size_fig = (16, 12)
@@ -78,8 +78,6 @@ def TPC():
                 path_lst.append(curr_dir+slash+path2ZimT)
                 tVG_lst.append('tVG_TPC_G_{:.1e}_G0_{:.2f}.txt'.format(Gen,G0))
                 tj_lst.append('tj_TPC_G_{:.1e}_G0_{:.2f}.dat'.format(Gen,G0))
-        
- 
         # Run ZimT
         # str_lst = str_lst[::-1] # reverse list order to start with longest delays
         p = multiprocessing.Pool(max_jobs)
