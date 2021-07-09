@@ -21,16 +21,19 @@ def run_plot_SIMsalabim():
     system = platform.system()                  # Operating system
     max_jobs = os.cpu_count()-2                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
     if system == 'Windows':             # cannot easily do multiprocessing in Windows
-            max_jobs = 1
-            slash = '/'
-            try:
-                os.system('taskkill.exe /F /IM zimt.exe')
-            except:
-                pass
+        max_jobs = 1
+        slash = '\\'
+        try:
+            os.system('taskkill.exe /F /IM SIMsalabim.exe')
+        except:
+            pass
     else:
         slash = '/'
 
     path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/DDSuite_v403_OPV/SIMsalabim'
+    # on Windows: must be a string (not Path), use \\ in front of U or '
+    # path2SIMsalabim = os.getcwd() + '\..\..\\Uni\PV\SIMsalabim\\'
+
     run_simu = True #Rerun simulation
 
     ## Figures control
