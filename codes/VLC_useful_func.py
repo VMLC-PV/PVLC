@@ -12,6 +12,7 @@ import subprocess,shutil,os,glob
 from itertools import repeat
 import warnings
 import sys
+from pathlib import Path
 # Don't show warnings
 warnings.filterwarnings("ignore")
 ## Physics constants
@@ -1040,7 +1041,7 @@ def clean_up_output(filename_start,path):
         if fname.startswith(filename_start):
             os.remove(os.path.join(path,fname))
 
-def Store_output_in_folder(filenames,folder_name,path):
+def store_output_in_folder(filenames,folder_name,path):
     """Move output files from the simulation into new folder
 
     Parameters
@@ -1054,9 +1055,9 @@ def Store_output_in_folder(filenames,folder_name,path):
     """    
 
     # Create directory if it does not exist
-    if not os.path.exists(path+folder_name):
-        os.makedirs(path+folder_name)
+    if not os.path.exists(Path(path,folder_name)):
+        os.makedirs(Path(path,folder_name))
     # move file into the new folder
-    for i in filenames:
-        if os.path.exists(path+i):
-            os.replace(path+i,path+folder_name+i)
+    for f in filenames:
+        if os.path.exists(Path(path,f)):
+            os.replace(Path(path,f),Path(path,folder_name,f))
