@@ -4,6 +4,7 @@
 # by Vincent M. Le Corre
 # Package import
 from unicodedata import name
+from numpy.core.numeric import ones
 import pandas as pds
 import matplotlib.pyplot as plt
 import numpy as np 
@@ -594,7 +595,7 @@ def zimt_impedance(Vapp,Vamp,freq,Gen,steps=100,tVG_name='tVG.txt'):
 
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e') 
 
-def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, Vamp, freq, drift_steps, Gen, tVG_path, tVG_name='tVG.txt'):
+def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, tprobe, Vamp, freq, drift_steps, Gen, tVG_path, tVG_name='tVG.txt'):
     """Make tVG file for tid experiment
 
     Parameters
@@ -622,16 +623,32 @@ def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, Vamp, freq, drift_steps, 
     t_fill = np.linspace(0, tfill, fill_steps) 
     V_fill = np.empty(len(t_fill))
     V_fill.fill(Vfill)
-    
-    t_drift = np.linspace(tfill, tfill+tdrift, int(drift_steps*freq))[1:]
-    V_drift = Vdrift + Vamp * np.sin(2*np.pi*freq*(t_drift-tdrift))
 
-    
+    if tprobe == 0:
 
-    t = np.concatenate((t_fill, t_drift))
-    V = np.concatenate((V_fill, V_drift))
-    G = np.empty(len(t))
-    G.fill(Gen)
+        t_drift = np.linspace(tfill, tfill+tdrift, int(drift_steps*freq))[1:]
+        V_drift = Vdrift + Vamp * np.sin(2*np.pi*freq*(t_drift-tdrift))
+
+        t = np.concatenate((t_fill, t_drift))
+        V = np.concatenate((V_fill, V_drift))
+        G = np.empty(len(t))
+        G.fill(Gen)
+    else:
+        t_drift = np.linspace(tfill, tfill+tprobe, int(drift_steps*freq))[1:]
+        V_drift = Vdrift*np.ones(len(t_drift))
+        print(V_drift)
+
+        t_probe = np.linspace(tfill+tprobe, tfill+tprobe+3/freq, int(drift_steps*freq))[1:]
+        V_probe = Vdrift + Vamp * np.sin(2*np.pi*freq*(t_probe-tdrift-tprobe))
+
+        t = np.concatenate((t_fill, t_drift, t_probe))
+        V = np.concatenate((V_fill, V_drift, V_probe))
+        G = np.empty(len(t))
+        G.fill(Gen)
+
+    plt.plot(t,V)
+    plt.show()
+        
 
     tVG = pds.DataFrame(np.transpose([t, V, G]), columns=['t','Vext','Gehp'])
 

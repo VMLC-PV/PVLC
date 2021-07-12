@@ -34,6 +34,7 @@ def TID():
     fill_steps = 100
     Vdrift = 0
     tdrift = 2
+    dt_probe = 50e-2 # time between probing points 
     Vamp = 10e-3
     freq = 10e3
     drift_steps = 21
@@ -41,9 +42,12 @@ def TID():
     tVG_path = path2ZimT
     tVG_name='tVG.txt'
 
+    if not dt_probe == 0:
+        zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, dt_probe, Vamp, freq, drift_steps, Gen, tVG_path, tVG_name)
+    else:
+        zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, dt_probe, Vamp, freq, drift_steps, Gen, tVG_path, tVG_name)
 
-    # zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, Vamp, freq, drift_steps, Gen, tVG_path, tVG_name)
-    
+
 
     str_lst, sys_lst, path_lst, tVG_lst, tj_lst = [], [], [], [], []
 
@@ -89,8 +93,6 @@ def TID():
         #     idx_start = p*drift_steps
         #     idx_end = idx_start + 2*drift_steps
         #     print(tV_drift[idx_start])
-
-
     
 
 if __name__ == "__main__":
