@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import plot_settings_screen
-from scipy import stats,optimize,constants
+from scipy import stats,optimize,constants, fftpack
 import subprocess,shutil,os,glob
 from itertools import repeat
 import warnings
@@ -1061,3 +1061,28 @@ def store_output_in_folder(filenames,folder_name,path):
     for f in filenames:
         if os.path.exists(Path(path,f)):
             os.replace(Path(path,f),Path(path,folder_name,f))
+
+
+def calcZC(tV, tJ, freq, equalCircuit):
+
+    tV_fft = fftpack.fft(tV)[1:int(len(tV)/2)]
+
+    tJ_fft = fftpack.fft(tJ)[1:int(len(tV)/2)]
+    Z = max(tV_fft)/max(tJ_fft)
+   
+
+    if equalCircuit == 'RCp':
+        C = 1/(2*np.pi*freq) * (1/Z).imag 
+    elif equalCircuit == 'RCs' :
+        C = -1/(2*np.pi*freq*Z.imag) 
+  
+
+    # plt.stem(abs(tV_fft))
+    # plt.show()
+
+    # plt.stem(abs(tJ_fft))
+    # plt.show()
+
+    return Z, C
+
+

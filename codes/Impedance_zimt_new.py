@@ -17,14 +17,14 @@ from scipy import interpolate
 from scipy import constants
 from time import time
 from itertools import repeat
-from impedance.models.circuits import circuits as impcir
-from impedance import preprocessing as imppre
-from impedance import visualization as impvis
+# from impedance.models.circuits import circuits as impcir
+# from impedance import preprocessing as imppre
+# from impedance import visualization as impvis
 ## Don't show warnings
 warnings.filterwarnings("ignore")
 ## Homemade package import
 import plot_settings_screen
-from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,Store_output_in_folder,clean_up_output,preprocess_Impedance_data,get_complex_impedance,fit_sin_func,sin_func
+# from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,Store_output_in_folder,clean_up_output,preprocess_Impedance_data,get_complex_impedance,fit_sin_func,sin_func
 from tVG_gen import zimt_impedance
 
 ## Main Program

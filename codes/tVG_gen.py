@@ -595,7 +595,7 @@ def zimt_impedance(Vapp,Vamp,freq,Gen,steps=100,tVG_name='tVG.txt'):
 
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e') 
 
-def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, tprobe, Vamp, freq, drift_steps, Gen, tVG_path, tVG_name='tVG.txt'):
+def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, tprobe, Vamp, freq, num_periods, drift_steps, Gen, tVG_path, tVG_name='tVG.txt'):
     """Make tVG file for tid experiment
 
     Parameters
@@ -633,12 +633,15 @@ def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, tprobe, Vamp, freq, drift
         V = np.concatenate((V_fill, V_drift))
         G = np.empty(len(t))
         G.fill(Gen)
-    else:
-        t_drift = np.linspace(tfill, tfill+tprobe, int(drift_steps*freq))[1:]
-        V_drift = Vdrift*np.ones(len(t_drift))
-        print(V_drift)
 
-        t_probe = np.linspace(tfill+tprobe, tfill+tprobe+3/freq, int(drift_steps*freq))[1:]
+        idx_probe_start = len(t_fill) + 1
+
+    else:
+        t_drift = np.linspace(tfill, tfill+tprobe, int(drift_steps))[1:]
+
+        V_drift = Vdrift*np.ones(len(t_drift))
+
+        t_probe = np.linspace(tfill+tprobe, tfill+tprobe+num_periods/freq, int(num_periods*drift_steps))[1:]
         V_probe = Vdrift + Vamp * np.sin(2*np.pi*freq*(t_probe-tdrift-tprobe))
 
         t = np.concatenate((t_fill, t_drift, t_probe))
@@ -646,12 +649,56 @@ def zimt_TID(Vfill, tfill, fill_steps, Vdrift, tdrift, tprobe, Vamp, freq, drift
         G = np.empty(len(t))
         G.fill(Gen)
 
-    plt.plot(t,V)
-    plt.show()
-        
+        idx_probe_start = len(t_fill) + len(t_drift)
+
+    # plt.plot(V[idx_probe_start:])
+    # plt.show()
 
     tVG = pds.DataFrame(np.transpose([t, V, G]), columns=['t','Vext','Gehp'])
 
-    tVG.to_csv(Path(tVG_path,tVG_name),sep=' ',index=False,float_format='%.3e') 
+    tVG.to_csv(Path(tVG_path,tVG_name),sep=' ',index=False,float_format='%.9e') 
 
-    
+    return idx_probe_start
+
+def zimt_TAS(Vdc, Vamp, fprobe, num_periods,  Gen, tVG_path, tVG_name='tVG.txt'):
+    """Make tVG file for TAS experiment
+
+    Parameters
+    ----------
+    Vfill : [float]
+        Filling voltage (unit: V)
+    tfill : [float]
+        Time of filling pulse (unit: s)
+    fill_steps : [float]
+        Number of steps in the filling steps (unit: none)
+    Vdrift : [float]
+        Drift voltage (unit: V) 
+    tdrift : [float]
+        Time of drifting (unit: s)
+    Vamp : [float]
+        Amplitude of perturbation voltage (unit V)
+    freq : [float]
+        frequency of the ac perturbation (unit: Hz)
+    drift_steps : [float]
+        Number of steps in one perturbation period (unit: none)
+    Gen : [type]
+        max generation rate (i.e. light intensity) of the gaussian pulse (unit: m^-3 s^-1)
+    tVG_name : str, optional
+    """
+
+
+    t = np.linspace(0, num_periods/fprobe, num_periods * 40)
+    V = Vdc + Vamp * np.sin(2*np.pi*fprobe*t)
+
+    G = np.empty(len(t))
+    G.fill(Gen)
+
+    idx_probe_start = 1
+
+    tVG = pds.DataFrame(np.transpose([t, V, G]), columns=['t','Vext','Gehp'])
+
+    tVG.to_csv(Path(tVG_path,tVG_name),sep=' ',index=False,float_format='%.9e') 
+
+    return idx_probe_start
+
+
