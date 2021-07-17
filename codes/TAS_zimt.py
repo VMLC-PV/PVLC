@@ -34,13 +34,12 @@ def TAS():
 
     Vdc = 1
     Vamp = 10e-3
-    num_probe =  1
+    num_probe =  10
     num_periods = 4
     Gen = 0
     tVG_path = path2ZimT
     
-
-    fprobe_span = np.logspace(1,1, num_probe) 
+    fprobe_span = np.logspace(1,6, num_probe) 
 
     str_lst, sys_lst, path_lst, tVG_lst, tj_lst = [], [], [], [], []
 
@@ -65,10 +64,10 @@ def TAS():
         path_lst.append(path2ZimT)
         tVG_lst.append(tVG_name)
         tj_lst.append(tj_name)
-    # p = multiprocessing.Pool(max_jobs)
-    # results = parmap.starmap(run_zimt, list(zip(str_lst,sys_lst,path_lst)), pm_pool=p, pm_processes=max_jobs,pm_pbar=True)
-    # p.close()
-    # p.join()
+    p = multiprocessing.Pool(max_jobs)
+    results = parmap.starmap(run_zimt, list(zip(str_lst,sys_lst,path_lst)), pm_pool=p, pm_processes=max_jobs,pm_pbar=True)
+    p.close()
+    p.join()
 
     if move_output: 
         store_output_in_folder(tVG_lst,store_folder,path2ZimT)
@@ -101,11 +100,13 @@ def TAS():
     realZ = [Z.real for Z in tZ]
     imagZ = [-Z.imag for Z in tZ]
 
-    plt.plot(fprobe_span, imagZ)
-    plt.xscale('log')
-    plt.show()
 
-    plt.plot(realZ, imagZ )
-    plt.show
+    # print(tZ)
+    # plt.plot(fprobe_span, imagZ)
+    # plt.xscale('log')
+    # plt.show()
+
+    # plt.plot(realZ, imagZ )
+    # plt.show
 if __name__ == "__main__":
     TAS()

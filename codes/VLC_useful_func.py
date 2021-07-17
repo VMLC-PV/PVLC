@@ -1065,24 +1065,28 @@ def store_output_in_folder(filenames,folder_name,path):
 
 def calcZC(tV, tJ, freq, equalCircuit):
 
-    tV_fft = fftpack.fft(tV)[1:int(len(tV)/2)]
+    tV_fft = fftpack.fft(tV)/len(tV)
+    tV_fft = tV_fft[0:round(len(tV)/2)]
+    tV_fft[0] = 0
+    tJ_fft = fftpack.fft(tJ)/len(tJ)
+    tJ_fft = tJ_fft[0:round(len(tJ)/2)]
+    tJ_fft[0] = 0
 
-    tJ_fft = fftpack.fft(tJ)[1:int(len(tV)/2)]
     Z = max(tV_fft)/max(tJ_fft)
-   
 
     if equalCircuit == 'RCp':
         C = 1/(2*np.pi*freq) * (1/Z).imag 
     elif equalCircuit == 'RCs' :
         C = -1/(2*np.pi*freq*Z.imag) 
     
-    print(tJ)
+    plt.plot(tV)
+    plt.show()
 
-    # plt.stem(abs(tV_fft))
-    # plt.show()
+    plt.stem(abs(tV_fft))
+    plt.show()
 
-    # plt.stem(abs(tJ_fft))
-    # plt.show()
+    plt.stem(abs(tJ_fft))
+    plt.show()
 
     return Z, C
 
