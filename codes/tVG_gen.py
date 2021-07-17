@@ -686,15 +686,26 @@ def zimt_TAS(Vdc, Vamp, fprobe, num_periods,  Gen, tVG_path, tVG_name='tVG.txt')
     tVG_name : str, optional
     """
 
+    # t_steady = np.linspace(0, 1, 10)
+    # V_steady = Vdc * np.ones(len(t_steady))
+    
+    # t_probe = np.linspace(t_steady[-1], t_steady[-1] + num_periods/fprobe, num_periods * 40)[1:]
+    # V_probe = Vdc + Vamp * np.sin(2*np.pi*fprobe*(t_probe-t_steady[-1]))
+
+    # t = np.concatenate((t_steady, t_probe))
+    # V = np.concatenate((V_steady, V_probe))
+    # G = np.empty(len(t))
+    # G.fill(Gen)
+
+    # idx_probe_start = len(t_steady)
 
     t = np.linspace(0, num_periods/fprobe, num_periods * 40)
-    V = Vdc + Vamp * np.sin(2*np.pi*fprobe*t)
-
+    V = Vdc + Vamp * np.sin(2*np.pi*fprobe*(t))
+    # V = np.linspace(0,0.5,num_periods * 40)
     G = np.empty(len(t))
     G.fill(Gen)
 
     idx_probe_start = 1
-
     tVG = pds.DataFrame(np.transpose([t, V, G]), columns=['t','Vext','Gehp'])
 
     tVG.to_csv(Path(tVG_path,tVG_name),sep=' ',index=False,float_format='%.9e') 

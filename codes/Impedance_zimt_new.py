@@ -24,7 +24,8 @@ from itertools import repeat
 warnings.filterwarnings("ignore")
 ## Homemade package import
 import plot_settings_screen
-# from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,Store_output_in_folder,clean_up_output,preprocess_Impedance_data,get_complex_impedance,fit_sin_func,sin_func
+from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,store_output_in_folder,clean_up_output,preprocess_Impedance_data,get_complex_impedance,fit_sin_func,sin_func
+#from VLC_useful_func import run_zimt, Store_output_in_folder
 from tVG_gen import zimt_impedance
 
 ## Main Program
@@ -46,7 +47,7 @@ def Impedance():
         slash = '/'
 
     curr_dir = os.getcwd()                           # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash  # Path to ZimT
+    path2ZimT = 'Simulation_program/ZimT'+slash  # Path to ZimT
     paperdata = curr_dir+slash+'Paper_Sim_Data.txt'  # Path to txt Data File to be added to C/f plot, if paper_comparison is enabled. header: 'f C' delimiter: ' '
 
     ## Physics constants
@@ -73,7 +74,7 @@ def Impedance():
     freqs = np.append(freqs1, freqs2)                      # frequencies to simulate (Hz)
     freqs_interp = np.geomspace(1e2,1e7,num=2000)          # same but more dense range of frequencies (for interpolation)
     # print(freqs)
-    Vapps = [0]#[-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
+    Vapps = [1]#[0]#[-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
     Vamp = 0.01                       # Amplitude voltage perturbation
     Gen = 0e27                        # Average generation rate 
     sun = 1                      # generation rate at 1 sun
@@ -126,7 +127,7 @@ def Impedance():
                 tj_lst.append('tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapp,freq))
         
         # Run ZimT
-        # str_lst = str_lst[::-1]  # reverse list order to start with longest delays
+        str_lst = str_lst[::-1]  # reverse list order to start with longest delays
         p = multiprocessing.Pool(max_jobs)
         results = parmap.starmap(run_zimt,list(zip(str_lst,sys_lst,path_lst)),
                                  pm_pool=p, pm_processes=max_jobs,pm_pbar=True)
@@ -138,8 +139,8 @@ def Impedance():
     
     ## Move output folder to new folder
     if move_ouput_2_folder: # Move outputs to Store_folder
-        Store_output_in_folder(tVG_lst,Store_folder,path2ZimT)
-        Store_output_in_folder(tj_lst,Store_folder,path2ZimT)
+        store_output_in_folder(tVG_lst,Store_folder,path2ZimT)
+        store_output_in_folder(tj_lst,Store_folder,path2ZimT)
 
     ###########################################################################
     ### Calculate Complex Impedance ###########################################
@@ -169,9 +170,14 @@ def Impedance():
             phase[idx].append(cmath.phase(comp))
             Cap[idx].append((1/comp).imag/(2*np.pi*freq))
         ## save f and Z in file for later use of impedance.py
+        print(freqs)
         fZ = np.transpose([freqs, np.asarray(ReZ[idx]), np.asarray(ImZ[idx])])
         fZ = fZ[np.asarray(ImZ[idx])<0]  # only save realistic data: Im(Z)<0
         fZ_file[idx] = path2ZimT+Store_folder+'fZ_{:.2f}V.txt'.format(Vapps[idx])
+        print(freqs[0])
+        print(ReZ[0])
+        plt.plot(ReZ[0], ImZ[0])
+        plt.show()
         np.savetxt(fZ_file[idx], fZ, delimiter=',')  # ',' needed for impedance.preprocessing
 
     ## convert lists to arrays to enable calculations

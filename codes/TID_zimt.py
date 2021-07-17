@@ -23,7 +23,7 @@ def TID():
             except:
                 pass
 
-    path2ZimT = Path('/mnt/c/Users/schmidt/Documents/Scripts/PVLC/codes/Simulation_program/ZimT/')     # Path to ZimT in curr_dir
+    path2ZimT = Path('./Simulation_program/ZimT/')     # Path to ZimT in curr_dir
     move_output = True
     store_folder = Path('TID')
 
