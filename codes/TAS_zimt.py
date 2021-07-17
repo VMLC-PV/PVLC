@@ -34,13 +34,13 @@ def TAS():
 
     Vdc = 1
     Vamp = 10e-3
-    num_probe =  10
+    num_probe =  1
     num_periods = 4
     Gen = 0
     tVG_path = path2ZimT
     
 
-    fprobe_span = np.logspace(1,6, num_probe) 
+    fprobe_span = np.logspace(1,1, num_probe) 
 
     str_lst, sys_lst, path_lst, tVG_lst, tj_lst = [], [], [], [], []
 
@@ -98,7 +98,6 @@ def TAS():
         tZ.append(Z)
         tC.append(C)
     absa = [abs(Z) for Z in tZ]
-    
     realZ = [Z.real for Z in tZ]
     imagZ = [-Z.imag for Z in tZ]
 

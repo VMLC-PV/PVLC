@@ -1075,7 +1075,8 @@ def calcZC(tV, tJ, freq, equalCircuit):
         C = 1/(2*np.pi*freq) * (1/Z).imag 
     elif equalCircuit == 'RCs' :
         C = -1/(2*np.pi*freq*Z.imag) 
-  
+    
+    print(tJ)
 
     # plt.stem(abs(tV_fft))
     # plt.show()
