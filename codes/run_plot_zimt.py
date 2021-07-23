@@ -30,8 +30,8 @@ def run_plot_zimt():
         slash = '/'
 
     curr_dir = os.getcwd()
-    path2ZimT = Path(os.getcwd()) /'Simulation_program/DDSuite_v403_OPV/ZimT'
-    run_simu = False #Rerun simulation
+    path2ZimT = Path(os.getcwd()) /'Simulation_program/DDSuite_v405_peroPL/ZimT'
+    run_simu = True #Rerun simulation
 
     ## Figures control
     ext_save_pic = '.jpg'
@@ -58,20 +58,21 @@ def run_plot_zimt():
 
 
     ## Prepare tVG file (Can be any of the experiment described in tVG_gen.py)
-    name_tVG = 'tVG_TPC.txt'
-    zimt_TPC(1e-8,1e-6,1e31,0,1e-8,tpulse=5e-8,time_exp =True,tVG_name=path2ZimT/name_tVG) # Simulation input for zimt_TPC (see tVG_gen.py) 
-
+    name_tVG = 'tVG_PL.txt'
+    # zimt_TPC(1e-8,1e-6,1e31,0,1e-8,tpulse=5e-8,time_exp =True,tVG_name=path2ZimT/name_tVG) # Simulation input for zimt_TPC (see tVG_gen.py) 
+    # zimt_voltage_step(1e-4,3,1.15,0,3.35e27,steps=100,trf = 10e-9,time_exp =True,tVG_name=path2ZimT/name_tVG)
+    zimt_TrPL(1e-9,1e-6,1e20,1e15,0,1e-8,tpulse=6e-9,time_exp =True,tVG_name=path2ZimT/name_tVG)
     ## Prepare strings to run
     # Fixed string
     fixed_str = '-tVG_file '+name_tVG
     # Parameters to vary
-    parameter1 = {'name':'L','values':[140e-9]}
-    parameter2 = {'name':'Lang_pre','values':[0.1]}
-    parameter3 = {'name':'L_LTL','values':[20e-9]}
-    parameter4 = {'name':'L_RTL','values':[30e-9]}
+    parameter1 = {'name':'L','values':[400e-9]}
+    # parameter2 = {'name':'Lang_pre','values':[0.1]}
+    parameter3 = {'name':'L_LTL','values':[0e-9]}
+    parameter4 = {'name':'L_RTL','values':[0e-9]}
     th_TL_left = parameter3['values'][0] # needed for nrj_diag plot
     th_TL_right = parameter4['values'][0] # needed for nrj_diag plot
-    parameters = [parameter1,parameter2,parameter3,parameter4] 
+    parameters = [parameter1,parameter3,parameter4] 
 
     str_lst,labels,JVexp_lst,tj_files,Var_files,sys_lst,path_lst = [],[],[],[],[],[],[]
     val,nam = [],[]
@@ -96,7 +97,7 @@ def run_plot_zimt():
         JVexp_lst.append('')
         sys_lst.append(system)
         path_lst.append(path2ZimT)
-
+    print(str_lst)
     colors = plt.cm.viridis(np.linspace(0,1,max(len(str_lst),4)+1)) # prepare color for plots
     
 
@@ -113,7 +114,9 @@ def run_plot_zimt():
         ## Plot tjs
         if plot_tjs:
             data_tj = pd.read_csv(path2ZimT/tj_file_name,delim_whitespace=True)
-            zimt_tj_plot(num_tj_plot,data_tj,x='t',y=['Jext'],xlimits=[],ylimits=[],plot_type=0,labels=labels[idx],colors=colors[idx],line_type = ['-'],mark='',legend=False,save_yes=False,pic_save_name='transient.jpg')  
+            zimt_tj_plot(num_tj_plot,data_tj,x='t',y=['Jdir'],xlimits=[],ylimits=[],plot_type=2,labels=labels[idx],colors=colors[idx],line_type = ['-'],mark='',legend=False,save_yes=False,pic_save_name='transient.jpg')
+            # zimt_tj_plot(num_tj_plot,data_tj,x='t',y=['Jdir'],xlimits=[],ylimits=[],plot_type=2,labels=labels[idx],colors=colors[idx],line_type = ['-'],mark='',legend=False,save_yes=False,pic_save_name='transient.jpg')  
+  
 
 
         ## Plot Var_file

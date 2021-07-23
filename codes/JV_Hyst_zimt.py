@@ -38,13 +38,13 @@ def main():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v403/ZimT'+slash    # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v405_pero/ZimT'+slash    # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
 
     # Simulation input
-    run_simu = True                                         # Rerun simu?
+    run_simu = 0                                         # Rerun simu?
     plot_tjs = True                                        # make plot ?
     plot_output = False
     move_ouput_2_folder = True
@@ -55,7 +55,7 @@ def main():
     print(Gens)
     # scans = np.geomspace(1e-3,5e3,num=10)
     
-    Vstart = 1.22
+    Vstart = 1.17
     Vfinal = 0
 
     # scans_exp = [0.01,0.06,0.2,1,2,10,20,100,200,1000,2000]
@@ -195,13 +195,6 @@ def main():
         print(PCE_dir1[0]-PCE_dir1[-1])
         
 
-
-
-
-    
-    # if plot_output:
-            # Make plots
-    plt.show()
     ## Clean-up outputs from folder
     if clean_output: # delete all outputs
         clean_up_output('tj',curr_dir+slash+path2ZimT+Store_folder)
@@ -214,6 +207,7 @@ def main():
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 if __name__ == '__main__':
     main()
+    plt.show()
     
     
     

@@ -239,7 +239,7 @@ def transfermatrix(genrate_profile_name='generation_profile.txt',layers = [],thi
 
     # sets a defaults if no input
     if layers ==[]: 
-        layers = ['SiO2' , 'ITO' , 'PEDOT' , 'P3HTPCBM_BHJ' , 'Ca' , 'Al']
+        layers = ['SiO2' , 'ITO' , 'ZnONPVLC' , 'P3HTPCBM_BHJ' , 'Ca' , 'Al']
 
     if thicknesses == []: 
         thicknesses= [0 , 110 , 20  , 100 , 20 , 200]

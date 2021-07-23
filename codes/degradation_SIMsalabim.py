@@ -16,7 +16,7 @@ from tVG_gen import *
 import plot_settings_screen
 
 
-def run_plot_SIMsalabim():
+def run_plot_SIMsalabim(a,b):
 
     ## General Inputs
     warnings.filterwarnings("ignore")   # Don't show warnings
@@ -32,9 +32,9 @@ def run_plot_SIMsalabim():
     else:
         slash = '/'
 
-    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/DDSuite_v405/SIMsalabim'
+    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/AutoFit125/DDSuite_v407_Xiaoyan/SIMsalabim'
     path2ZimT = Path(os.getcwd()) /'Simulation_program/DDSuite_v405/ZimT'
-    run_simu_JV = False #Rerun simulation
+    run_simu_JV = True #Rerun simulation
     run_simu_CELIV = False #Rerun simulation
 
     ## Figures control
@@ -50,7 +50,7 @@ def run_plot_SIMsalabim():
         f_JVs = plt.figure(num_JV_plot,figsize=size_fig)
     
     # CELIV plots 
-    plot_CELIVs = True
+    plot_CELIVs = False
     if plot_JVs:
         num_fig = num_fig + 1
         num_CELIV_plot = num_fig
@@ -59,14 +59,16 @@ def run_plot_SIMsalabim():
 
     ## Prepare strings to run
     # Fixed string
-    fixed_str = '' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
+    fixed_str = '-Nc 2.986E+27 -mup_0 2.052E-7 -W_L 4.226 -W_R 5.511 -Bulk_tr 3.175E+18 -Etrap 4.435 -kdirect 4.500E-17 -Rseries 4.251E-5 -Rshunt 8.677E-1 -Gehp 1.281E+28 ' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
 
     # Parameters to vary
     # time = np.arange(0,100,10)
-    time = np.geomspace(1e-1,100,13)
+    time = np.geomspace(1e-1,1000,13)
     time = np.insert(time,0,0)
-    mob = MonoExpDecay(time, 10, 1e-7, 1e-8)
-    lang = MonoExpInc(time, 10, 0.001, 0.002)
+    # a = MonoExpDecay(time, 1, 1e-7, 1e-10)
+    # b = StretchedExp(time, 1, 3/12, 1e-8, 1e-9)
+    mob = a + b
+    lang = MonoExpInc(time, 10, 0.001, 0.002,)
     parameter1 = {'name':'L','values':[140e-9]}
     parameter2 = {'name':'mun_0','values':list(mob)}
     # parameter2 = {'name':'Lang_pre','values':list(lang)}
@@ -100,7 +102,7 @@ def run_plot_SIMsalabim():
     
     
     for i in list(itertools.product(*val)):
-        str_line = ''
+        str_line = fixed_str
         lab = ''
         JV_name = 'JV'
         Var_name = 'Var'
@@ -228,25 +230,25 @@ def run_plot_SIMsalabim():
         x_label = 'Time [s]'
     
         plt.subplot(221)
-        plt.plot(x_var,PCE/max(PCE),linestyle='-',marker='o',markersize=10,markerfacecolor='w')
+        plt.semilogx(x_var,PCE/max(PCE),linestyle='-',marker='o',markersize=10,markerfacecolor='w')
         plt.xlabel(x_label)
         plt.ylabel('Norm. PCE')
         plt.ylim([0.2,1.2])
         plt.grid(b=True,which='both')
         plt.subplot(222)
-        plt.plot(x_var,FF,linestyle='-',marker='o',markersize=10,markerfacecolor='w')
+        plt.semilogx(x_var,FF,linestyle='-',marker='o',markersize=10,markerfacecolor='w')
         plt.xlabel(x_label)
         plt.ylabel('FF')
-        plt.ylim([0,1])
+        # plt.ylim([0,1])
         plt.grid(b=True,which='both')
         plt.subplot(223)
-        plt.plot(x_var,Voc,linestyle='-',marker='o',markersize=10,markerfacecolor='w')
+        plt.semilogx(x_var,Voc,linestyle='-',marker='o',markersize=10,markerfacecolor='w')
         plt.xlabel(x_label)
         plt.ylabel('V$_{OC}$ [V]')
         # plt.ylim([0.7,1.3])
         plt.grid(b=True,which='both')
         plt.subplot(224)
-        plt.plot(x_var,abs(np.asarray(Jsc)),linestyle='-',marker='o',markersize=10,markerfacecolor='w')
+        plt.semilogx(x_var,abs(np.asarray(Jsc)),linestyle='-',marker='o',markersize=10,markerfacecolor='w')
         plt.xlabel(x_label)
         plt.ylabel('J$_{SC}$ mA cm$^{-2}$')
         # plt.ylim([10,30])
@@ -256,7 +258,7 @@ def run_plot_SIMsalabim():
 
 
     # JV_file plots
-    plot_CELIV_val = True # Make JV plot
+    plot_CELIV_val = False # Make JV plot
     if plot_CELIV_val :
         num_fig = num_fig + 1
         num_CELIV_val = num_fig
@@ -296,5 +298,17 @@ def run_plot_SIMsalabim():
 
 if __name__ == '__main__':
 
-    run_plot_SIMsalabim()
+    
+
+    
+    time = np.geomspace(1e-1,300,13)
+    time = np.insert(time,0,0)
+    a = MonoExpDecay(time, 1, 5e-8, 1e-10)
+    b = StretchedExp(time, 1, 3/12, 4.5e-8, 3e-8)
+    run_plot_SIMsalabim(a,b)
+    plt.figure(110)
+    plt.plot(time,a,label='mono')
+    plt.plot(time,b,label = 'stretch')
+    plt.loglog(time,a+b,label='both')
+    plt.legend()
     plt.show()

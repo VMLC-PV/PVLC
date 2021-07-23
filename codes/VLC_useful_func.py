@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.legend import Legend
 import plot_settings_screen
 from scipy import stats,optimize,constants
-import subprocess,shutil,os,glob,tqdm,parmap,multiprocessing
+import subprocess,shutil,os,glob,tqdm,parmap,multiprocessing,random,sys
 from itertools import repeat
 import warnings
 import sys
@@ -65,6 +65,14 @@ def sci_notation(number, sig_fig=2):
             output = '10' + b    
     return output
 
+def LinearFunc(t,a,b):
+
+    return a*t + b
+
+def testfunc(t, tau, f0 , finf,lam):
+    
+    return (f0-finf) * np.exp(-(t/tau) ) + finf - lam * t 
+
 def MonoExpDecay(t, tau, f0 , finf):
     """ Monoexponential decay function
     f(t) = (f0-finf) * np.exp(-(t/tau) ) + finf
@@ -89,6 +97,7 @@ def MonoExpDecay(t, tau, f0 , finf):
         f(t)
     """
     return (f0-finf) * np.exp(-(t/tau) ) + finf
+    
 
 def MonoExpInc(t, tau, f0, finf):
     """ Monoexponential Inc function
@@ -142,6 +151,32 @@ def StretchedExp(t, tau, h, A, B):
         f(t)
     """
     return A * np.exp(- (t/tau)**h ) + B
+
+def Larryfunc(t, a1, a2, tau,  k, gamma):
+    """Larry degradation fitting function
+    f(t) = (1-a1*exp(-t/tau)) * 1 / ((1/a2)+k * t ** gamma)
+
+    Parameters
+    ----------
+    t : 1-D sequence of floats
+        time
+    a1 : float
+        [description]
+    tau : float
+        [description]
+    a2 : float
+        [description]
+    k : float
+        [description]
+    gamma : float
+        [description]
+
+    Returns
+    -------
+    1-D sequence of floats
+        f(t)
+    """
+    return (1-a1*np.exp(-t/tau)) * 1 / ((1/a2)+k * t ** gamma)
 
 def get_Jsc(Volt,Curr):
     """Get the short-circuit current (Jsc) from solar cell JV-curve by interpolating the current at 0 V
@@ -303,6 +338,43 @@ def get_alpha_factor(suns,Jscs):
     alpha, intercept_d, r_value_d, p_value_d, std_err_d = stats.linregress(suns,Jscs)
     return alpha,intercept_d, r_value_d**2, p_value_d, std_err_d
 
+def get_random_value(val_min,val_max,scale='lin'):
+    """Get random value between two boundaries
+
+    Parameters
+    ----------
+    val_min : float
+        min value
+    
+    val_max : float
+        max value
+
+    scale : str, optional
+        scale type, by default 'lin'
+
+    Returns
+    -------
+    float
+        random value
+    """
+    if val_min > val_max:
+        dum_min = min(val_min,val_max)
+        dum_max =  max(val_min,val_max)
+        val_min = dum_min
+        val_max = dum_max
+        print('Careful, the val_min > val_max, check the input for get_random_value')
+
+    random_val = random.uniform(0, 1)
+    if scale == 'lin':
+        val = (val_max - val_min) * random_val + val_min
+    elif scale == 'log':
+        val = np.sign(val_max) * np.exp( random_val * ( np.log(abs(val_max)) - np.log(abs(val_min)) ) +np.log(abs(val_min)) )
+    elif scale == 'int':
+        val = int(round((val_max - val_min) * random_val + val_min))
+    else:
+        print('The program will stop')
+        sys.exit('Wrong scale for the input parameters')
+    return val
 
 ######################################################################
 ############### Function to run simulation code ######################
@@ -356,13 +428,18 @@ def run_SIMsalabim(str2run,System,path=''):
     curr_dir = os.getcwd()
     os.chdir(path)
     FNULL = open(os.devnull, 'w')
-    # stdout=FNULL, stderr=subprocess.STDOUT is used to turn of the display of SIMsalabim output on the terminal
-    if System == 'Windows':
-        subprocess.call(path+r'SIMsalabim.exe ' + str2run,stdout=FNULL, stderr=subprocess.STDOUT)
-    elif System == 'Linux':
-        subprocess.check_call(('./SIMsalabim ' + str2run).split(),stdout=FNULL, stderr=subprocess.STDOUT)
-    else: print('Wrong system input')
+    try:
+        # stdout=FNULL, stderr=subprocess.STDOUT is used to turn of the display of SIMsalabim output on the terminal
+        if System == 'Windows':
+            subprocess.call(path+r'SIMsalabim.exe ' + str2run,stdout=FNULL, stderr=subprocess.STDOUT)
+        elif System == 'Linux':
+            subprocess.check_call(('./SIMsalabim ' + str2run).split(),stdout=FNULL, stderr=subprocess.STDOUT)
+        else: print('Wrong system input')
+    except:
+        pass
     os.chdir(curr_dir)
+
+
    
 def run_zimt(str2run,System,path=''):
     """Run zimt in the folder specified by 'path'.
