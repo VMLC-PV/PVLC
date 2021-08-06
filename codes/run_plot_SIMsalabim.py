@@ -45,8 +45,8 @@ def run_plot_SIMsalabim():
         num_JV_plot = num_fig
         f_JVs = plt.figure(num_JV_plot,figsize=size_fig)
     # Var_file plots
-    plot_nrj_diag = False # Make energy diagram plot
-    plot_densities = False # Make density plot
+    plot_nrj_diag = True # Make energy diagram plot
+    plot_densities = True # Make density plot
     if plot_nrj_diag:
         num_fig = num_fig + 1
         num_nrj_diag_plot = num_fig
@@ -61,18 +61,20 @@ def run_plot_SIMsalabim():
     ## Prepare strings to run
     # Fixed string
     # fixed_str = '-Nc 3.946E+27 -mun_0 2.295E-7 -mup_0 2.476E-7 -W_L 4.110 -W_R 5.538 -Bulk_tr 3.431E+18 -Etrap 4.187 -kdirect 1.351E-17 -Gehp 1.210E+28 -Rseries 6.288E-5 -Rshunt 9.367' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
-    fixed_str = '-Nc 2.603E+27 -mun_0 4.278E-7 -mup_0 1.180E-7 -W_L 4.144 -W_R 5.529 -Etrap 4.251 -kdirect 3.962E-18 -Rseries 2.907E-4 -Rshunt 1.000 -Gehp 1.200E+28 -UseExpData 0 -Vmin -0.5' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
+    fixed_str = '-Nc 1.212E+26 -mun_0 2.888E-7 -mup_0 3.054E-7 -W_R 5.305 -Bulk_tr 6.001E+19 -Etrap 4.453 -kdirect 8.491E-18 -Rseries 1.759E-5 -Rshunt 7.622E-1 -Gehp 1.269E+28 -UseExpData 0 -Vmin -0.5 -CB 4.04 -VB 5.51 -VB_RTL 5.51 -until_Voc 1 -OutputRatio 20' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
 
 
     # Parameters to vary
     parameter1 = {'name':'L','values':[140e-9]}
-    parameter2 = {'name':'Gfrac','values':[0,0.00877, 0.0295, 0.0967, 0.2903605440421194, 0.943, 1, 2.258]}
+    parameter2 = {'name':'Nc','values':[ 1e26,1e27]}
     parameter3 = {'name':'L_LTL','values':[30e-9]}
     parameter4 = {'name':'L_RTL','values':[10e-9]}
-    parameter5 = {'name':'Bulk_tr','values':list(np.geomspace(1e20,1e22,3))}
+    parameter5 = {'name':'CB_LTL','values':[4.1]}
+    parameter6 = {'name':'W_L','values':[4.1,4.2]}
     L_LTL = parameter3['values'][0] # needed for nrj_diag plot
     L_RTL = parameter4['values'][0] # needed for nrj_diag plot
-    parameters = [parameter1,parameter2,parameter3,parameter4,parameter5] 
+    # parameters = [parameter1,parameter2,parameter3,parameter4,parameter5] 
+    parameters = [parameter2 ,parameter5,parameter6] 
 
     
     str_lst,labels,JVexp_lst,JV_files,Var_files,sys_lst,path_lst,val,nam = [],[],[],[],[],[],[],[],[]
@@ -131,7 +133,7 @@ def run_plot_SIMsalabim():
                 data_JVexp = pd.DataFrame()
 
 
-            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.5,1.1],ylimits=[-46,5])
+            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.5,1.1],ylimits=[-25,5])
             # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=2,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp)
 
         ## Plot Var_file
@@ -146,7 +148,7 @@ def run_plot_SIMsalabim():
         if plot_densities:
             # What do we plot?
             dens2plot = ['n','p']
-            line_type = ['-','--']    
+            line_type = ['-','--','-.']    
             # control colorbar
             colorbar = 'lin'
             if idx == 0 and colorbar != 'None':
@@ -160,8 +162,9 @@ def run_plot_SIMsalabim():
                 leg_line.append(mlines.Line2D([], [], color='k', marker='None',markersize=15, label=d,linestyle=l)) # Create a legend for the first line.
             first_legend = plt.legend(handles=leg_line, loc='upper right',frameon=False)
             plt.gca().add_artist(first_legend) # Add the legend manually to the current Axes.
-
-            SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=list(np.linspace(np.min(data_var['Vext']),np.max(data_var['Vext']),5)),y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=colorbar_display)
+            #list(np.linspace(np.min(data_var['Vext']),np.max(data_var['Vext']),5))
+            # SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=list(np.linspace(np.min(data_var['Vext']),np.max(data_var['Vext']),5)),y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=colorbar_display)
+            SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=[np.max(data_var['Vext'])],y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=False)
             
             
         idx = idx+1

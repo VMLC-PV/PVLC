@@ -468,5 +468,5 @@ def transfermatrix(genrate_profile_name='generation_profile.txt',layers = [],thi
 
 if __name__ == '__main__':
     
-    transfermatrix()
+    transfermatrix(layers = ['glass' , 'ITO' , 'ZnONPVLC' , 'Y6' , 'MoOx5nmVLC' , 'Al'],thicknesses= [0 , 110 , 30  , 100 , 10 , 200],lambdas=np.arange(350,800,1))
     
