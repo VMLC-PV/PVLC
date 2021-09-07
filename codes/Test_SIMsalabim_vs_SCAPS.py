@@ -181,14 +181,14 @@ if __name__ == '__main__':
     # Inputs
     slash = '/'
     curr_dir = os.getcwd()                      # Current working directory
-    path2SIMsalabim = 'Simulation_program/DDSuite_v405/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+    path2SIMsalabim = 'Simulation_program/DDSuite_v407/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
     ext_save_pic = '.jpg'
     
     # Simulation types
     MIM_configuration = False
     Pin_nip_configuration = False
     Traps_configuration = False
-    Interface_traps_configuration = True
+    Interface_traps_configuration = False
 
     # First setup for MIM
     if MIM_configuration:

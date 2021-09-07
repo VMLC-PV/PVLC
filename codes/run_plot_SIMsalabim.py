@@ -45,8 +45,8 @@ def run_plot_SIMsalabim():
         num_JV_plot = num_fig
         f_JVs = plt.figure(num_JV_plot,figsize=size_fig)
     # Var_file plots
-    plot_nrj_diag = True # Make energy diagram plot
-    plot_densities = True # Make density plot
+    plot_nrj_diag = False # Make energy diagram plot
+    plot_densities = False # Make density plot
     if plot_nrj_diag:
         num_fig = num_fig + 1
         num_nrj_diag_plot = num_fig
@@ -61,20 +61,20 @@ def run_plot_SIMsalabim():
     ## Prepare strings to run
     # Fixed string
     # fixed_str = '-Nc 3.946E+27 -mun_0 2.295E-7 -mup_0 2.476E-7 -W_L 4.110 -W_R 5.538 -Bulk_tr 3.431E+18 -Etrap 4.187 -kdirect 1.351E-17 -Gehp 1.210E+28 -Rseries 6.288E-5 -Rshunt 9.367' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
-    fixed_str = '-Nc 1.212E+26 -mun_0 2.888E-7 -mup_0 3.054E-7 -W_R 5.305 -Bulk_tr 6.001E+19 -Etrap 4.453 -kdirect 8.491E-18 -Rseries 1.759E-5 -Rshunt 7.622E-1 -Gehp 1.269E+28 -UseExpData 0 -Vmin -0.5 -CB 4.04 -VB 5.51 -VB_RTL 5.51 -until_Voc 1 -OutputRatio 20' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
+    fixed_str = '-Nc 1.212E+27 -mun_0 2.888E-8 -mup_0 3.054E-8 -W_L 4.3 -W_R 5.405 -Bulk_tr 0E+19 -Etrap 4.453 -kdirect 8.491E-18 -Rseries 1.759E-5 -Rshunt 7.622E-1 -Gehp 1.269E+28 -UseExpData 0 -Vmin -0.5 -CB 4.04 -VB 5.51 -VB_RTL 5.51 -Cn 1e-10 -Cp 1e-10 -Nc_RTL 1.212E+27 -Nc_LTL 1.212E+27 -eps_r_LTL 3.5 -eps_r_RTL 3.5 -nu_int_LTL 1e3 -nu_int_RTL 1e3 -until_Voc 1 -eps_r 25' # -Nc 1.212E+26 
 
 
     # Parameters to vary
     parameter1 = {'name':'L','values':[140e-9]}
-    parameter2 = {'name':'Nc','values':[ 1e26,1e27]}
-    parameter3 = {'name':'L_LTL','values':[30e-9]}
-    parameter4 = {'name':'L_RTL','values':[10e-9]}
-    parameter5 = {'name':'CB_LTL','values':[4.1]}
-    parameter6 = {'name':'W_L','values':[4.1,4.2]}
-    L_LTL = parameter3['values'][0] # needed for nrj_diag plot
-    L_RTL = parameter4['values'][0] # needed for nrj_diag plot
-    # parameters = [parameter1,parameter2,parameter3,parameter4,parameter5] 
-    parameters = [parameter2 ,parameter5,parameter6] 
+    parameter2 = {'name':'L_LTL','values':[30e-9]}
+    parameter3 = {'name':'L_RTL','values':[10e-9]}
+    # parameter4 = {'name':'St_R','values':[0,1e10,1e12,1e13,1e14]}
+    parameter4 = {'name':'CB_LTL','values':[3.9,4.04,4.1,4.2,4.3]}
+
+    L_LTL = parameter2['values'][0] # needed for nrj_diag plot
+    L_RTL = parameter3['values'][0] # needed for nrj_diag plot
+    parameters = [parameter1,parameter2,parameter3,parameter4] 
+    # parameters = [parameter2 ,parameter5,parameter6] 
 
     
     str_lst,labels,JVexp_lst,JV_files,Var_files,sys_lst,path_lst,val,nam = [],[],[],[],[],[],[],[],[]

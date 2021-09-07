@@ -435,7 +435,7 @@ def run_SIMsalabim(str2run,System,path=''):
         elif System == 'Linux':
             subprocess.check_call(('./SIMsalabim ' + str2run).split(),stdout=FNULL, stderr=subprocess.STDOUT)
         else: print('Wrong system input')
-    except:
+    except Exception:
         pass
     os.chdir(curr_dir)
 
