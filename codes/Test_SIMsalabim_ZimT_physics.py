@@ -50,8 +50,8 @@ fig_idx = 0
 
 # Inputs
 curr_dir = os.getcwd()                      # Current working directory
-path2SIMsalabim = 'Simulation_program/DDSuite_v405/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
-path2ZimT = 'Simulation_program/DDSuite_v405/ZimT'+slash                      # Path to ZimT in curr_dir
+path2SIMsalabim = 'Simulation_program/DDSuite_v409/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+path2ZimT = 'Simulation_program/DDSuite_v409/ZimT'+slash                      # Path to ZimT in curr_dir
 ext_save_pic = '.jpg'
 
 # Chose test to run:

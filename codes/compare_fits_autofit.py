@@ -13,6 +13,23 @@ from pathlib import Path
 from VLC_useful_func import *
 import plot_settings_screen
 
+def GetParFromStr(str2run,L = 100e-9,Cn=1e-13,Cp=1e-13):
+
+    str2run = ' '.join(str2run.split()) #remove extra white space
+
+    new = str2run.split()
+
+    Names= new[::2]
+    Values = new[1::2]
+    for i,j in enumerate(Names):
+        Names[i] = Names[i].replace('-', '')
+
+    for i,j in enumerate(Values):
+        Values[i] = float(Values[i])
+
+    return pd.DataFrame({'Parameters':Names,'Values':Values})
+
+
 
 def run_plot_SIMsalabim():
 
@@ -30,8 +47,8 @@ def run_plot_SIMsalabim():
     else:
         slash = '/'
 
-    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/AutoFit125/DDSuite_v407_Xiaoyan/SIMsalabim'
-    run_simu = True #Rerun simulation
+    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/DDSuite_v409_crack/SIMsalabim'
+    run_simu = 1 #Rerun simulation 
 
     ## Figures control
     ext_save_pic = '.jpg'
@@ -64,21 +81,20 @@ def run_plot_SIMsalabim():
     ## DT-Y6
     ID = 3918
     # age = 'fresh'
-    pixel = 3
-    Gfracs = [0,0.008774872893385296, 0.0295868067205203, 0.09674039280460424, 0.2903605440421194, 0.9438975920716443,1, 2.2588639120448035]
-    # fixed_str = '-Nc 1.212E+27 -mun_0 2.888E-7 -mup_0 3.054E-7 -W_L 4.040 -W_R 5.405 -Bulk_tr 6.001E+19 -Etrap 4.453 -kdirect 8.491E-18 -Rseries 1.759E-5 -Rshunt 7.622E-1 -Gehp 1.269E+28 -UseExpData 0 -Vmin -0.5 -CB 4.04 -VB 5.51 -CB_LTL 4.04 -VB_RTL 5.51' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
-
-    # fixed_str = '-Nc 2.936E+26 -mun_0 3.059E-7 -mup_0 3.155E-7 -W_L 4.100 -W_R 5.505 -Bulk_tr 7.879E+19 -Etrap 4.409 -kdirect 1.580E-18 -Rseries 1.775E-5 -Rshunt 7.065E-1 -Gehp 1.220E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51'
-    # fixed_str = '-Nc 2.153E+26 -mun_0 7.205E-7 -mup_0 2.893E-7 -W_L 4.185 -W_R 5.288 -Bulk_tr 3.285E+19 -Etrap 4.553 -kdirect 3.030E-18 -Rseries 2.836E-5 -Rshunt 8.387E-1 -Gehp 1.250E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51 -L 130e-9 -L_RTL 0'
-
-    age = 'aged'
     # pixel = 3
-    # Gfracs = [0,0.008125240951214394, 0.02704509630728539, 0.08851876613458132, 0.26551237818238604, 0.861085219869508,1, 2.051557459849598]
-    # fixed_str = '-Nc 8.212E+27 -mun_0 2.888E-7 -mup_0 3.054E-7 -W_L 4.040 -W_R 5.405 -Bulk_tr 9.001E+19 -Etrap 4.453 -kdirect 8.491E-18 -Rseries 1.759E-5 -Rshunt 4.622E-1 -Gehp 1.329E+28 -UseExpData 1 -Vmin -0.5 -CB 4.04 -VB 5.51 -CB_LTL 4.04 -VB_RTL 5.51' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
-    # fixed_str = '-Nc 1.619E+27 -mun_0 4.076E-7 -mup_0 3.424E-7 -W_L 4.180 -W_R 5.508 -Bulk_tr 1.416E+20 -Etrap 4.600 -kdirect 2.302E-18 -Rseries 1.324E-5 -Rshunt 6.653E-1 -Gehp 1.360E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51'
-    fixed_str = '-Nc 2.153E+26 -mun_0 7.205E-7 -mup_0 2.893E-7 -W_L 4.185 -W_R 5.288 -Bulk_tr 8.285E+19 -Etrap 4.553 -kdirect 3.030E-18 -Rseries 2.836E-5 -Rshunt 8.387E-1 -Gehp 1.370E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51 -L 130e-9 -L_RTL 0'
+    # Gfracs = [0,0.008774872893385296, 0.0295868067205203, 0.09674039280460424, 0.2903605440421194, 0.9438975920716443,1, 2.2588639120448035]
     
-    # fixed_str = '-Nc 1.000E+27 -mun_0 8.000E-7 -mup_0 4.039E-7 -W_L 4.186 -W_R 5.505 -Bulk_tr 2.438E+20 -Etrap 4.575 -kdirect 1.550E-18 -Rseries 1.445E-5 -Rshunt 6.524E-1 -Gehp 1.360E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51'
+    # fixed_str = '-mun_0 7.020E-8 -mup_0 4.315E-8 -kdirect 7.245E-18 -Rseries 3.063E-5 -Rshunt 7.995E-1 -Gehp 1.217E+28 -Etrap 4.774 -Bulk_tr 3.477E+18 -W_R 5.353 -Nc 5.645E+27 -W_L 4.060 -St_R 6.496E+9 -St_L 9.067E+8 -CB 4.04' #Best 1%
+
+      
+    age = 'aged'
+    pixel = 3
+    Gfracs = [0,0.008125240951214394, 0.02704509630728539, 0.08851876613458132, 0.26551237818238604, 0.861085219869508,1, 2.051557459849598]
+    
+    # fixed_str = '-mun_0 1.107E-7 -mup_0 1.269E-7 -kdirect 3.483E-18 -Rseries 6.487E-5 -Rshunt 6.844E-1 -Gehp 1.412E+28 -Etrap 4.664 -Bulk_tr 4.910E+19 -W_R 5.304 -Nc 5.519E+27 -W_L 4.119 -St_R 6.994E+8 -St_L 1.344E+6 -CB 4.04'
+
+    fixed_str = '-mun_0 7.020E-8 -mup_0 4.315E-8 -kdirect 7.245E-18 -Rseries 6.487E-5 -Rshunt 6.844E-1 -Gehp 1.412E+28 -Etrap 4.774 -Bulk_tr 3.477E+18 -W_R 5.204 -Nc 5.645E+27 -W_L 4.219 -St_R 6.496E+15 -St_L 9.067E+15 -CB 4.04' 
+
 
     # pixel = 1
     # Gfracs = [0,0.00866783401714054, 0.029238534889572412, 0.09543346872544842, 0.2862747313125504, 0.9306521928901167,1, 2.226981200864729]
@@ -90,9 +106,8 @@ def run_plot_SIMsalabim():
     # pixel = 2
     # Gfracs = [0,0.0090015933301563, 0.029796718028699196, 0.09717869847550556, 0.29087180672086876, 0.943525832647383, 1, 2.2428264040319434]
 
-    # fixed_str = '-Nc 9.656E+26 -mun_0 2.151E-7 -mup_0 4.719E-7 -W_L 4.061 -W_R 5.491 -Bulk_tr 1.224E+20 -Etrap 4.367 -kdirect 3.269E-18 -Rseries 4.736E-5 -Rshunt 1.105 -Gehp 1.303E+28 -UseExpData 0 -Vmin -0.5 -CB 4.06 -VB 5.51 -CB_LTL 4.06 -VB_RTL 5.51' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
 
-    # fixed_str = '-Nc 1.394E+27 -mun_0 5.313E-8 -mup_0 1.963E-7 -W_L 4.100 -W_R 5.466 -Bulk_tr 1.678E+19 -Etrap 4.444 -kdirect 5.908E-18 -Rseries 1.215E-5 -Rshunt 1.505 -Gehp 1.306E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51'
+    # fixed_str = '-mun_0 2.312E-8 -mup_0 2.247E-7 -kdirect 8.000E-18 -Rseries 5.468E-5 -Rshunt 2.521 -Gehp 1.311E+28 -Etrap 4.587 -Bulk_tr 4.894E+18 -W_R 5.367 -Nc 5.224E+27 -W_L 4.110 -St_R 3.152E+6 -St_L 4.313E+8 -CB 4.06' #keep'
     # Parameters to vary
     
     # pixel = 3
@@ -102,7 +117,8 @@ def run_plot_SIMsalabim():
     # age = 'aged'
     # pixel = 2
     # Gfracs = [0,0.007814523992331497, 0.026764391395073882, 0.08785804792342802, 0.26391800166747525, 0.8572188961690461, 1,2.042784401098461]
-    # fixed_str = '-Nc 2.295E+27 -mun_0 2.710E-8 -mup_0 6.591E-7 -W_L 4.100 -W_R 5.510 -Bulk_tr 2.047E+19 -Etrap 4.595 -kdirect 9.983E-18 -Rseries 1.834E-5 -Rshunt 1.690 -Gehp 1.373E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
+ 
+    # fixed_str = '-mun_0 5.471E-8 -mup_0 1.734E-8 -kdirect 7.703E-18 -Rseries 1.092E-5 -Rshunt 1.241 -Gehp 1.384E+28 -Etrap 4.626 -Bulk_tr 6.462E+18 -W_R 5.442 -Nc 6.311E+27 -W_L 4.156 -St_R 2.733E+5 -St_L 4.750E+10'
 
 
     ## Y6-BO-4F
@@ -110,29 +126,25 @@ def run_plot_SIMsalabim():
     # age = 'fresh'
     # pixel = 4
     # Gfracs = [0,0.00899285762350159, 0.02958847222355735, 0.09647014717333, 0.2897613119670855, 0.9399050246570602, 1, 2.2396445153662032]
-    # fixed_str = '-Nc 1.036E+27 -mun_0 4.051E-7 -mup_0 1.907E-7 -W_L 4.060 -W_R 5.50 -Bulk_tr 9.024E+20 -Etrap 4.281 -kdirect 1.744E-18 -Rseries 2.889E-5 -Rshunt 1.000 -Gehp 1.301E+28 -UseExpData 0 -Vmin -0.5 -CB 4.05 -VB 5.51 -CB_LTL 4.05 -VB_RTL 5.51'
 
-    # fixed_str = '-Nc 4.145E+26 -mun_0 3.962E-7 -mup_0 2.086E-7 -W_L 4.100 -W_R 5.454 -Bulk_tr 7.552E+19 -Etrap 4.470 -kdirect 6.991E-18 -Rseries 1.217E-5 -Rshunt 1.501 -Gehp 1.324E+28 -UseExpData 0 -Vmin -0.5 -CB 4.1 -VB 5.51 -CB_LTL 4.1 -VB_RTL 5.51'
+    # fixed_str = '-mun_0 2.442E-8 -mup_0 1.829E-7 -kdirect 7.999E-18 -Rseries 2.652E-5 -Rshunt 1.370 -Gehp 1.326E+28 -Etrap 4.558 -Bulk_tr 6.827E+18 -W_R 5.485 -Nc 5.799E+27 -W_L 4.074 -St_R 1.336E+8 -St_L 9.698E+9 -CB 4.05'
 
     # pixel = 2
     # Gfracs = [0,0.009009535782328836, 0.029625731507062908, 0.09649315148591558, 0.2897571956906255, 0.9400858561495319,1, 2.238969531299488]
-    # fixed_str = '-Nc 1.036E+27 -mun_0 4.051E-7 -mup_0 1.907E-7 -W_L 4.060 -W_R 5.50 -Bulk_tr 9.024E+20 -Etrap 4.281 -kdirect 1.744E-18 -Rseries 2.889E-5 -Rshunt 1.000 -Gehp 1.301E+28 -UseExpData 0 -Vmin -0.5 -CB 4.05 -VB 5.51 -CB_LTL 4.05 -VB_RTL 5.51'
+    # fixed_str = '-mun_0 7.002E-8 -mup_0 2.733E-8 -kdirect 8.000E-18 -Rseries 1.182E-5 -Rshunt 1.560 -Gehp 1.320E+28 -Etrap 4.683 -Bulk_tr 6.336E+18 -W_R 5.424 -Nc 5.739E+27 -W_L 4.085 -St_R 2.074E+5 -St_L 6.013E+4 -CB 4.05'
 
 
-    ## o-IDFBR
+    # o-IDFBR
     # ID = 3939
     # age = 'fresh'
     # pixel = 3
     # Gfracs = [0,0.007703621989336275, 0.030391616105901822, 0.10494576208861922, 0.31542562971134397, 0.994778451921309, 1, 2.2770546056260343]
-    # fixed_str = '-Nc 2.560E+26 -mun_0 2.708E-7 -mup_0 5.000E-7 -W_L 3.700 -W_R 5.510 -Bulk_tr 1.523E+20 -Etrap 4.413 -kdirect 2.281E-18 -Rseries 4.263E-3 -Rshunt 0.1964 -Gehp 3.480E+27 -UseExpData 0 -Vmin -0.5 -CB 3.7 -VB 5.51 -CB_LTL 3.7 -VB_RTL 5.51'
-    # fixed_str = '-St_L 1e15 -St_R 1e15 -Nc 5.000E+26 -mun_0 1.095E-7 -mup_0 1.145E-8 -W_L 3.8 -W_R 5.45 -kdirect 1.220E-14 -Rseries 2.949E-3 -Rshunt 9.170E-1 -Gehp 3.555E+27 -Bulk_tr 0e18 -accDens 0.1 -UseExpData 0 -Vmin -0.5 -CB 3.8 -VB 5.51 -CB_LTL 3.8 -VB_RTL 5.51 -Cn 1e-9 -Cp 1e-9'
-    # fixed_str = '-Nc 1.000E+26 -mun_0 1.095E-7 -mup_0 1.145E-8 -W_L 4.132 -W_R 5.292 -kdirect 1.220E-18 -Rseries 2.949E-3 -Rshunt 9.170E-1 -Gehp 3.555E+27 -UseExpData 0 -Vmin -0.5 -CB 3.7 -VB 5.51 -accDens 0.5 -L 100e-9 -L_LTL 0 -L_RTL 0'
-    # fixed_str = '-rms_mode log -rms_threshold 0.7  -Nc 1E+26 -mun_0 8.002E-8 -mup_0 2.626E-8 -W_L 4.073 -W_R 5.237 -kdirect 1.682E-18 -Rseries 2.416E-3 -Rshunt 1.804E-1 -Gehp 2.699E+27 -accDens 0.5 -L 100e-9 -L_LTL 0 -L_RTL 0 -Bulk_tr 0E+20'
+    # fixed_str = '-mun_0 1.678E-7 -mup_0 8.802E-7 -kdirect 2.816E-18 -Rseries 1.591E-6 -Rshunt 1.210 -Gehp 3.657E+27 -Etrap 4.319 -Bulk_tr 3.476E+20 -W_R 5.152 -Nc 1.120E+26 -W_L 3.826 -St_R 8.787E+5 -St_L 8.865E+4 -CB 3.7'
     
-    parameter1 = {'name':'L','values':[130e-9]}
+    parameter1 = {'name':'L','values':[140e-9]}
     parameter2 = {'name':'Gfrac','values':Gfracs}
     parameter3 = {'name':'L_LTL','values':[30e-9]}
-    parameter4 = {'name':'L_RTL','values':[0e-9]}
+    parameter4 = {'name':'L_RTL','values':[10e-9]}
     L_LTL = parameter3['values'][0] # needed for nrj_diag plot
     L_RTL = parameter4['values'][0] # needed for nrj_diag plot
     parameters = [parameter1,parameter2,parameter3,parameter4] 
@@ -198,6 +210,7 @@ def run_plot_SIMsalabim():
                 perf_simu.append([get_Voc(data_JV['Vext'],data_JV['Jext']),get_Jsc(data_JV['Vext'],data_JV['Jext']),get_FF(data_JV['Vext'],data_JV['Jext']),get_PCE(data_JV['Vext'],data_JV['Jext'],suns=Gfrac)/10])
                 perf_exp.append([get_Voc(data_JVexp['V'],data_JVexp['J']),get_Jsc(data_JVexp['V'],data_JVexp['J']),get_FF(data_JVexp['V'],data_JVexp['J']),get_PCE(data_JVexp['V'],data_JVexp['J'],suns=Gfrac)/10])
             SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp,xlimits=[-0.5,1.1],ylimits=[-50,10],save_yes=True,pic_save_name=path2SIMsalabim/'JVfit.jpg')
+            # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp,xlimits=[-0.5,1.35],ylimits=[-15,10],save_yes=True,pic_save_name=path2SIMsalabim/'JVfit.jpg')
             # data_JV['Jext'] =abs(data_JV['Jext'])
             # data_JVexp['J'] =abs(data_JVexp['J'])
             # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=3,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp)
@@ -271,6 +284,16 @@ def run_plot_SIMsalabim():
     plt.tight_layout()
     plt.grid(b=True,which='both')
     plt.savefig(path2SIMsalabim/'perf_fit.jpg')
+
+    FOMS = CalcVLCFOM(fixed_str,Path(path2SIMsalabim / 'Device_parameters.txt'))
+    print('Figures of Merits:')
+    print('delta_b = {:.2e}'.format(FOMS[0]))
+    print('delta_tr = {:.2e}'.format(FOMS[2]))
+    print('Delta_b = {:.2e}'.format(FOMS[1]))
+    print('Delta_tr = {:.2e}'.format(FOMS[3]))
+
+    FOMsave = pd.DataFrame({'delta_b':[FOMS[0]],'delta_tr':[FOMS[2]],'Delta_b':[FOMS[1]],'Delta_tr':[FOMS[3]],'Vbi':[FOMS[4]],'Rseries':[FOMS[5]],'Rshunt':[FOMS[6]]})
+    FOMsave.to_csv(Path(path2SIMsalabim / 'FOMS.txt'),index=False)
 
 
 if __name__ == '__main__':
