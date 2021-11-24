@@ -3,34 +3,36 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
-import subprocess,shutil,os,tqdm,parmap,multiprocessing,platform,warnings,itertools
+import os,platform,warnings,itertools
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from pathlib import Path
 # package by VLC
-from VLC_useful_func import *
-import plot_settings_screen
+from VLC_units.plots.SimSS_plots import *
+from VLC_units.simu.runsim import *
+from VLC_units.simu.get_input_par import *
+
 
 
 def run_plot_SIMsalabim():
 
     ## General Inputs
-    warnings.filterwarnings("ignore")   # Don't show warnings
+    warnings.filterwarnings("ignore")           # Don't show warnings
     system = platform.system()                  # Operating system
-    max_jobs = os.cpu_count()-2                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
-    if system == 'Windows':             # cannot easily do multiprocessing in Windows
+    max_jobs = os.cpu_count()-2                 # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    do_multiprocessing = True                      # Use multiprocessing
+    if system == 'Windows':                     # cannot easily do multiprocessing in Windows
             max_jobs = 1
-            slash = '/'
-            try:
+            do_multiprocessing = False
+            try:                                # kill all running jobs to avoid conflicts
                 os.system('taskkill.exe /F /IM zimt.exe')
             except:
                 pass
-    else:
-        slash = '/'
 
-    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/AutoFit125/DDSuite_v407_Xiaoyan/SIMsalabim'
+
+    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/SIMsalabim_v425/SimSS'
     run_simu = True #Rerun simulation
 
     ## Figures control
@@ -45,8 +47,8 @@ def run_plot_SIMsalabim():
         num_JV_plot = num_fig
         f_JVs = plt.figure(num_JV_plot,figsize=size_fig)
     # Var_file plots
-    plot_nrj_diag = False # Make energy diagram plot
-    plot_densities = False # Make density plot
+    plot_nrj_diag = True # Make energy diagram plot
+    plot_densities = True # Make density plot
     if plot_nrj_diag:
         num_fig = num_fig + 1
         num_nrj_diag_plot = num_fig
@@ -60,38 +62,29 @@ def run_plot_SIMsalabim():
 
     ## Prepare strings to run
     # Fixed string
-    # fixed_str = '-Nc 3.946E+27 -mun_0 2.295E-7 -mup_0 2.476E-7 -W_L 4.110 -W_R 5.538 -Bulk_tr 3.431E+18 -Etrap 4.187 -kdirect 1.351E-17 -Gehp 1.210E+28 -Rseries 6.288E-5 -Rshunt 9.367' # can chose a custom string here (advice don't put the thicknesses here but in the parameters below)
-    fixed_str = '-Nc 1.212E+27 -mun_0 2.888E-8 -mup_0 3.054E-8 -W_L 4.3 -W_R 5.405 -Bulk_tr 0E+19 -Etrap 4.453 -kdirect 8.491E-18 -Rseries 1.759E-5 -Rshunt 7.622E-1 -Gehp 1.269E+28 -UseExpData 0 -Vmin -0.5 -CB 4.04 -VB 5.51 -VB_RTL 5.51 -Cn 1e-10 -Cp 1e-10 -Nc_RTL 1.212E+27 -Nc_LTL 1.212E+27 -eps_r_LTL 3.5 -eps_r_RTL 3.5 -nu_int_LTL 1e3 -nu_int_RTL 1e3 -until_Voc 1 -eps_r 25' # -Nc 1.212E+26 
+    fixed_str = ''
 
 
     # Parameters to vary
-    parameter1 = {'name':'L','values':[140e-9]}
-    parameter2 = {'name':'L_LTL','values':[30e-9]}
-    parameter3 = {'name':'L_RTL','values':[10e-9]}
-    # parameter4 = {'name':'St_R','values':[0,1e10,1e12,1e13,1e14]}
-    parameter4 = {'name':'CB_LTL','values':[3.9,4.04,4.1,4.2,4.3]}
+    parameters = []
+    parameters.append({'name':'L','values':[140e-9]})
+    parameters.append({'name':'L_LTL','values':[30e-9]})
+    parameters.append({'name':'L_RTL','values':[10e-9]})
+    parameters.append({'name':'W_L','values':[4.1,4.2]})
 
-    L_LTL = parameter2['values'][0] # needed for nrj_diag plot
-    L_RTL = parameter3['values'][0] # needed for nrj_diag plot
-    parameters = [parameter1,parameter2,parameter3,parameter4] 
-    # parameters = [parameter2 ,parameter5,parameter6] 
+    ParFileDic = ReadParameterFile(f"{path2SIMsalabim}/device_parameters.txt") # Read device parameters
 
     
-    str_lst,labels,JVexp_lst,JV_files,Var_files,sys_lst,path_lst,val,nam = [],[],[],[],[],[],[],[],[]
+    str_lst,labels,JVexp_lst,JV_files,Var_files,code_name_lst,path_lst,val,nam = [],[],[],[],[],[],[],[],[]
     # JVexp_lst= ['PM6_3918_dark.txt','PM6_3918_int3.txt','PM6_3918_int10.txt','PM6_3918_int33.txt','PM6_3918_int100.txt','PM6_3918_int330.txt','PM6_3918_am15_long.txt','PM6_3918_int800.txt']
 
-    for param in parameters:
+    for param in parameters: # initalize lists of values and names
         val.append(param['values'])
         nam.append(param['name'])
 
-        if param['name'] == 'L_LTL':
-            L_LTL = param['values'][0] # needed for nrj_diag plot
-
-        if param['name'] == 'L_RTL':
-            L_RTL = param['values'][0]  # needed for nrj_diag plot
     
     idx = 0
-    for i in list(itertools.product(*val)):
+    for i in list(itertools.product(*val)): # iterate over all combinations of parameters
         str_line = ''
         lab = ''
         JV_name = 'JV'
@@ -106,17 +99,21 @@ def run_plot_SIMsalabim():
         Var_files.append(Path(path2SIMsalabim) / str(Var_name+ '.dat'))
         labels.append(lab)
         JVexp_lst.append('')
-        sys_lst.append(system)
+        code_name_lst.append('SimSS')
         path_lst.append(path2SIMsalabim)
-        idx = idx + 1
+        idx += 1
     # print(str_lst)
+
     colors = plt.cm.viridis(np.linspace(0,1,max(len(str_lst),4)+1)) # prepare color for plots
 
-    
     # Run simulation
     if run_simu:
-        # Run SIMsalabim
-        run_multiprocess_simu(run_SIMsalabim,max_jobs,str_lst,sys_lst,path_lst)
+        if do_multiprocessing:
+            run_multiprocess_simu(run_code,code_name_lst,path_lst,str_lst,max_jobs)
+        else:
+            for i in range(len(str_lst)):
+                run_code(code_name_lst[i],path_lst[i],str_lst[i],show_term_output=True)
+
 
 
     idx = 0
@@ -142,7 +139,9 @@ def run_plot_SIMsalabim():
 
         # Energy diagram plot
         if plot_nrj_diag:
-            SIMsalabim_nrj_diag(num_nrj_diag_plot ,data_var,L_LTL,L_RTL,legend=False,Background_color=False,no_axis=False,pic_save_name='Energy_diagram'+ext_save_pic)
+            L_LTL = ChosePar('L_LTL',GetParFromStr(Simu_str),ParFileDic) # Needed for nrj_diag plot
+            L_RTL = ChosePar('L_RTL',GetParFromStr(Simu_str),ParFileDic) # Needed for nrj_diag plot
+            SIMsalabim_nrj_diag(num_nrj_diag_plot ,data_var,L_LTL,L_RTL,legend=False,Background_color=True,no_axis=False,pic_save_name='Energy_diagram'+ext_save_pic)
 
         # Carrier density plot
         if plot_densities:
@@ -167,11 +166,11 @@ def run_plot_SIMsalabim():
             SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=[np.max(data_var['Vext'])],y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=False)
             
             
-        idx = idx+1
+        idx += 1
   
 
 
 if __name__ == '__main__':
-
+    
     run_plot_SIMsalabim()
     plt.show()
