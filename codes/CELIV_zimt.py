@@ -38,7 +38,7 @@ def CELIV():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v403_OPV/ZimT'+slash                      # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v418/ZimT'+slash                      # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
@@ -51,9 +51,9 @@ def CELIV():
     Store_folder = 'CELIV'+slash
     clean_output = False
     L = 140e-9                                                  # Device thickness (m)
-    L_LTL = 20e-9                                                  # Left TL thickness (m)
-    L_RTL = 20e-9                                                  # Right TL thickness (m)
-    Gens = [0,1e30]                                               # Max generation rate for the gaussian laser pulse
+    L_LTL = 0e-9                                                  # Left TL thickness (m)
+    L_RTL = 0e-9                                                  # Right TL thickness (m)
+    Gens = [0,5e20,1e21,5e21,1e22]                                               # Max generation rate for the gaussian laser pulse
     slopes =[-1/1e-6]
     Voffsets =[0]
     tdelay = 0
@@ -67,7 +67,7 @@ def CELIV():
     # Figures control
     size_fig = (16, 12)
     num_fig_tjs= 0
-    colors = cm.viridis((np.linspace(0,1,max(len(slopes),4)+1)) ) # Color range for plotting
+    colors = cm.viridis((np.linspace(0,1,max(len(Gens),4)+1)) ) # Color range for plotting
     f_tjs = plt.figure(num_fig_tjs,figsize=size_fig)
 
     if run_simu:
@@ -76,15 +76,15 @@ def CELIV():
         for Gen in Gens:
             for slope in slopes:
                 for Voffset in Voffsets:
-                    zimt_CELIV(1e-8,3e-6,Voffset,slope,Gen,tpulse,1e-7,0,width_pulse = 6e-9,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
-                    str_lst.append('-L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -tVG_file tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt -tj_file tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset,Gen,slope,Voffset))
+                    zimt_CELIV(1e-8,3e-6,Voffset,slope,Gen,tpulse,1e-7,0,width_pulse = 6e-9,time_exp=True,steps=200,tVG_name=curr_dir+slash+path2ZimT+'tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
+                    str_lst.append('-Rseries 3e-4 -L '+str(L)+' -L_LTL '+str(L_LTL)+' -L_RTL '+str(L_RTL)+' -tVG_file tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt -tj_file tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset,Gen,slope,Voffset))
                     sys_lst.append(system)
                     path_lst.append(curr_dir+slash+path2ZimT)
                     tVG_lst.append('tVG_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.txt'.format(Gen,slope,Voffset))
                     tj_lst.append('tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset))
         
 
-           
+        print(str_lst)   
         # Run ZimT
         # str_lst = str_lst[::-1] # reverse list order to start with longest delays
         p = multiprocessing.Pool(max_jobs)
@@ -103,14 +103,16 @@ def CELIV():
     ################## JVs_file ############################
     ########################################################
     if plot_tjs:
-        
+        idx = 0
         for Gen in Gens:
-            idx = 0
+            
             for slope in slopes:
                 for Voffset in Voffsets: 
                     data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_CELIV_G_{:.2e}_slope_{:.2f}_Voff{:.2f}.dat'.format(Gen,slope,Voffset),delim_whitespace=True)
+
+                    data_tj['Jext'] = abs(data_tj['Jext'])
                     zimt_tj_plot(num_fig_tjs,data_tj,colors=colors[idx],plot_type=0,save_yes=True,legend=False,pic_save_name = curr_dir+slash+path2ZimT+Store_folder+'transient.jpg')
-                idx = idx + 1 
+            idx = idx + 1 
         
 
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds

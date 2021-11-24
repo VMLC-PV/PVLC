@@ -7,9 +7,9 @@ from pathlib import Path
 from VLC_useful_func import clean_up_output
 
 
-curr_dir = os.getcwd()
+curr_dir = ''
 # Path(os.getcwd()) /'Simulation_program/AutoFit125/DDSuite_v407_Xiaoyan/SIMsalabim'
-path2folder = 'Simulation_program/AutoFit125/DDSuite_v407_Xiaoyan/SIMsalabim'
+path2folder='C:/Users/lecor/Desktop/Desktop/bayesim-master_test_VLC/baysim-VLC/DDSuite_v409/SIMsalabim'
 # path2folder  = 'Simulation_program/DDSuite_v405_Xiaoyan/ZimT'
 
 

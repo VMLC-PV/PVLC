@@ -50,15 +50,15 @@ fig_idx = 0
 
 # Inputs
 curr_dir = os.getcwd()                      # Current working directory
-path2SIMsalabim = 'Simulation_program/DDSuite_v409/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
-path2ZimT = 'Simulation_program/DDSuite_v409/ZimT'+slash                      # Path to ZimT in curr_dir
+path2SIMsalabim = 'Simulation_program/DDSuite_v418v2/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+path2ZimT = 'Simulation_program/DDSuite_v418v2/ZimT'+slash                      # Path to ZimT in curr_dir
 ext_save_pic = '.jpg'
 
 # Chose test to run:
-Test_gen_profile = True
-Test_SCLC_MottGurney = True
-Test_SCLC_Traps = True
-Test_TPV = True
+Test_gen_profile = 0
+Test_SCLC_MottGurney = 0
+Test_SCLC_Traps = 0
+Test_TPV = 0
 Test_TPC = True
 Test_RCtime = True
 Test_Impedance = True
@@ -331,7 +331,7 @@ if Test_TPV:
     clean_output = False
     L = 140e-9                                                  # Device thickness (m)
     Gens = [1e28]                                               # Max generation rate for the gaussian laser pulse
-    G0s = [1e27]#,1e25]
+    G0s = [5e27]#,1e25]
     tpulse = 5e-8
 
     # Initialize 
@@ -349,14 +349,14 @@ if Test_TPV:
         # Generate tVG files and str_lst for light pulse simulation
         for Gen in Gens:
             for G0 in G0s:
-                zimt_light_decay(1e-8,5e-5,Gen,G0,'oc',100,trf = 20e-9,time_exp =True,tVG_name=curr_dir+slash+path2ZimT+'tVG_TPV_G_{:.1e}_G0_{:.1e}.txt'.format(Gen,G0))
+                zimt_light_decay(1e-8,3e-5,Gen,G0,'oc',100,trf = 20e-9,time_exp =True,tVG_name=curr_dir+slash+path2ZimT+'tVG_TPV_G_{:.1e}_G0_{:.1e}.txt'.format(Gen,G0))
                 str_lst.append('-L '+str(L)+' -tVG_file tVG_TPV_G_{:.1e}_G0_{:.1e}.txt -tj_file tj_TPV_G_{:.1e}_G0_{:.1e}.dat'.format(Gen,G0,Gen,G0))
                 sys_lst.append(system)
                 path_lst.append(curr_dir+slash+path2ZimT)
                 tVG_lst.append('tVG_TPV_G_{:.1e}_G0_{:.1e}.txt'.format(Gen,G0))
                 tj_lst.append('tj_TPV_G_{:.1e}_G0_{:.1e}.dat'.format(Gen,G0))
         
- 
+        print(str_lst)
         # Run ZimT
         str_lst = str_lst[::-1] # reverse list order to start with longest delays
         p = multiprocessing.Pool(max_jobs)
@@ -429,7 +429,7 @@ if Test_TPC:
     clean_output = False
     L = 140e-9                                                  # Device thickness (m)
     Gens = [1e28]                                               # Max generation rate for the gaussian laser pulse
-    G0s = [1e27]#,1e25]
+    G0s = [9e27]#,1e25]
     tpulse = 5e-8
 
     # Initialize 
@@ -446,14 +446,14 @@ if Test_TPC:
         # Generate tVG files and str_lst for light pulse simulation
         for Gen in Gens:
             for G0 in G0s:
-                zimt_light_decay(1e-8,1e-5,Gen,G0,0,100,trf = 20e-9,time_exp =True,tVG_name=curr_dir+slash+path2ZimT+'tVG_TPC_G_{:.1e}_G0_{:.1e}.txt'.format(Gen,G0))
+                zimt_light_decay(1e-9,2e-6,Gen,G0,0,100,trf = 20e-9,time_exp =True,tVG_name=curr_dir+slash+path2ZimT+'tVG_TPC_G_{:.1e}_G0_{:.1e}.txt'.format(Gen,G0))
                 str_lst.append('-L '+str(L)+' -tVG_file tVG_TPC_G_{:.1e}_G0_{:.1e}.txt -tj_file tj_TPC_G_{:.1e}_G0_{:.1e}.dat'.format(Gen,G0,Gen,G0))
                 sys_lst.append(system)
                 path_lst.append(curr_dir+slash+path2ZimT)
                 tVG_lst.append('tVG_TPC_G_{:.1e}_G0_{:.1e}.txt'.format(Gen,G0))
                 tj_lst.append('tj_TPC_G_{:.1e}_G0_{:.1e}.dat'.format(Gen,G0))
         
- 
+        print(str_lst)
         # Run ZimT
         str_lst = str_lst[::-1] # reverse list order to start with longest delays
         p = multiprocessing.Pool(max_jobs)

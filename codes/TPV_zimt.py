@@ -51,8 +51,8 @@ def TPV():
     Store_folder = 'TPV'+slash
     clean_output = False
     L = 140e-9                                                  # Device thickness (m)
-    Gens = [1e30]                                               # Max generation rate for the gaussian laser pulse
-    G0s = [1e25]#,1e25]
+    Gens = [1e27]                                               # Max generation rate for the gaussian laser pulse
+    G0s = [1e26]#,1e25]
     tpulse = 5e-8
 
     # Initialize 

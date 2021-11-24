@@ -71,7 +71,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
     curr_dir = os.getcwd()                                      # Current working directory
     path2ZimT = path2ZimT+slash                                 # Path to ZimT in curr_dir
     Store_folder = Store_folder+slash                           # Path to folder containing output data in curr_dir
-    run_simu = False                                            # Rerun simu?  
+    run_simu = True                                            # Rerun simu?  
     move_ouput_2_folder = True                                  # Move (True) output of simulation to Store_folder
     clean_output = False                                        # Clean output after simulation (delete files)
     make_fit = False                                            # Make fit dn/dt
@@ -88,7 +88,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
     Gens = [1e21]                                               # Max generation rate for the gaussian laser pulse
     tpulse = 3e-9                                               # Time at which the pulse occurs, needs to be changed if width_pulse is modified
     tstep = 1e-9
-    delays = np.geomspace(5e-9,1e-6,num=10) #[6e-9]                                             # Delays for TDCF simulation
+    delays = np.geomspace(5e-9,1e-6,num=7) #[6e-9]                                             # Delays for TDCF simulation
     width_pulse = 6e-9
     time_exp = True
     steps = 200
@@ -152,7 +152,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
         for Vpre in Vpres:
             for tdelay in delays:
                 zimt_tdcf(tmin,tdelay+tcol,Vpre,Vcol,0,tpulse,tstep,tdelay,width_pulse = width_pulse,tVp = 10e-9,time_exp=time_exp,steps=steps,tVG_name=curr_dir+slash+path2ZimT+'tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt'.format(tdelay,Vpre)) 
-                str_lst.append('-FailureMode 2 -tolJ 1e-3 -L '+str(L)+str2run+' -tVG_file tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre,tdelay,Vpre))
+                str_lst.append('-Rseries 3e-4 -ri 1 -rf 1e-2 -tolJ 1e-3 -L '+str(L)+str2run+' -tVG_file tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre,tdelay,Vpre))
                 sys_lst.append(system)
                 path_lst.append(curr_dir+slash+path2ZimT)
                 tVG_lst.append('tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt'.format(tdelay,Vpre))
@@ -161,14 +161,14 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
             # Run simulation with light pulse
             for Gen in Gens:
                 for tdelay in delays:
-                    str_lst.append('-FailureMode 2 -tolJ 1e-3 -L '+str(L)+str2run+' -tVG_file tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre,Gen,tdelay,Vpre))
+                    str_lst.append('-Rseries 3e-4  -ri 1 -rf 1e-2 -tolJ 1e-3 -L '+str(L)+str2run+' -tVG_file tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre,Gen,tdelay,Vpre))
                     zimt_tdcf(tmin,tdelay+tcol,Vpre,Vcol,Gen,tpulse,tstep,tdelay,width_pulse = width_pulse,tVp = 10e-9,time_exp=time_exp,steps=steps,tVG_name=curr_dir+slash+path2ZimT+'tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre))
                     sys_lst.append(system)
                     path_lst.append(curr_dir+slash+path2ZimT)
                     tVG_lst.append('tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre))
                     tVG_Gen_lst.append('tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre))
                     tj_lst.append('tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre))
-        # print(str_lst)            
+        print(str_lst)            
         # Run ZimT
         # str_lst = str_lst[::-1] # reverse list order to start with longest delays
         p = multiprocessing.Pool(max_jobs)
@@ -378,7 +378,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
 
 if __name__ == '__main__':
     
-    TDCF(L=140e-9,L_LTL=20e-9,L_RTL=20e-9,num_fig=0,path2ZimT = 'Simulation_program/DDSuite_v403_OPV/ZimT',Store_folder='TDCF')
+    TDCF(L=140e-9,L_LTL=20e-9,L_RTL=20e-9,num_fig=0,path2ZimT = 'Simulation_program/DDSuite_v418/ZimT',Store_folder='TDCF')
 
     plt.show()
     

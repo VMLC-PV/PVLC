@@ -38,7 +38,7 @@ def main():
         slash = '/'
 
     curr_dir = os.getcwd()              # Current working directory
-    path2ZimT = 'Simulation_program/DDSuite_v400/ZimT'+slash    # Path to ZimT in curr_dir
+    path2ZimT = 'Simulation_program/DDSuite_v418/ZimT'+slash    # Path to ZimT in curr_dir
 
     # Physics constants
     q = constants.value(u'elementary charge')
@@ -50,9 +50,9 @@ def main():
     move_ouput_2_folder = True
     Store_folder = 'BACE'+slash
     clean_output = False
-    L = 100e-9                                                  # Device thickness (m)
+    L = 140e-9                                                  # Device thickness (m)
     Gens = [1.44e28]                                               # Max generation rate for the gaussian laser pulse
-    Vpres = [0.77]
+    Vpres = [0.99]
     Vextrs =[0,-1,-2,-3,-4]
 
     # Initialize 
@@ -73,7 +73,7 @@ def main():
     for Vpre in Vpres:
         for Vextr in Vextrs:
             zimt_BACE(1e-8,1e-6,0e28,Vpre,Vextr,1e-10,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Vpre,Vextr))
-            str_lst.append('-FailureMode 1 -L '+str(L)+' -tVG_file tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Vpre,Vextr,Vpre,Vextr))
+            str_lst.append('-ri 1 -rf 1e-2 -Rseries 3e-4 -L '+str(L)+' -tVG_file tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Vpre,Vextr,Vpre,Vextr))
             sys_lst.append(system)
             path_lst.append(curr_dir+slash+path2ZimT)
             tVG_lst.append('tVG_BACE_dark_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Vpre,Vextr))
@@ -85,13 +85,13 @@ def main():
         for Vpre in Vpres:
             for Vextr in Vextrs:
                 zimt_BACE(1e-8,1e-6,Gen,Vpre,Vextr,1e-10,time_exp=True,steps=100,tVG_name=curr_dir+slash+path2ZimT+'tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Gen,Vpre,Vextr))
-                str_lst.append('-FailureMode 1 -L '+str(L)+' -tVG_file tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Gen,Vpre,Vextr,Gen,Vpre,Vextr))
+                str_lst.append('-ri 1 -rf 1e-2 -Rseries 3e-4 -L '+str(L)+' -tVG_file tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt -tj_file tj_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Gen,Vpre,Vextr,Gen,Vpre,Vextr))
                 sys_lst.append(system)
                 path_lst.append(curr_dir+slash+path2ZimT)
                 tVG_lst.append('tVG_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.txt'.format(Gen,Vpre,Vextr))
                 tj_lst.append('tj_BACE_G_{:.1e}_Vpre_{:.2f}_Vext{:.2f}.dat'.format(Gen,Vpre,Vextr))
         
-
+    print(str_lst)
     if run_simu:       
         # Run ZimT
         # str_lst = str_lst[::-1] # reverse list order to start with longest delays

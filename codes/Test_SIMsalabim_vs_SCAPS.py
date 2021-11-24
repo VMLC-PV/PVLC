@@ -181,7 +181,7 @@ if __name__ == '__main__':
     # Inputs
     slash = '/'
     curr_dir = os.getcwd()                      # Current working directory
-    path2SIMsalabim = 'Simulation_program/DDSuite_v409/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+    path2SIMsalabim = 'Simulation_program/DDSuite_v418/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
     ext_save_pic = '.jpg'
     
     # Simulation types
