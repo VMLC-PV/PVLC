@@ -27,7 +27,7 @@ def run_plot_SIMsalabim():
             max_jobs = 1
             do_multiprocessing = False
             try:                                # kill all running jobs to avoid conflicts
-                os.system('taskkill.exe /F /IM zimt.exe')
+                os.system('taskkill.exe /F /IM simss.exe')
             except:
                 pass
 
@@ -43,19 +43,19 @@ def run_plot_SIMsalabim():
     plot_JVs = True # Make JV plot
     plot_exp = False # Add experimental data to JV plot
     if plot_JVs:
-        num_fig = num_fig + 1
+        num_fig += 1
         num_JV_plot = num_fig
         f_JVs = plt.figure(num_JV_plot,figsize=size_fig)
     # Var_file plots
     plot_nrj_diag = True # Make energy diagram plot
     plot_densities = True # Make density plot
     if plot_nrj_diag:
-        num_fig = num_fig + 1
+        num_fig += 1
         num_nrj_diag_plot = num_fig
         f_nrj_diag = plt.figure(num_nrj_diag_plot,figsize=size_fig)
 
     if plot_densities:
-            num_fig = num_fig + 1
+            num_fig += 1
             num_dens_plot = num_fig
             f_nrj_diag = plt.figure(num_dens_plot,figsize=size_fig)
 

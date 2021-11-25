@@ -5,7 +5,7 @@
 # Package import
 import os,subprocess,platform
 from pathlib import Path
-def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True):
+def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True,verbose=True):
     """Compile program using fpc
 
     Parameters
@@ -18,14 +18,30 @@ def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True):
         show terminal output from the compilation, by default True
     force_fpc : bool, optional  
         force recompile with fpc even if compiled program already exists, by default True
+    verbose : bool, optional
+        print output of the compilation, by default True
     """   
 
     System = platform.system()                  # Operating system
     is_windows = (System == 'Windows')          # Check if we are on Windows
     path2prog = str(path2prog)                  # Convert to string
     # Check if the program is already compiled
-    if (os.path.isfile(path2prog+prog_name+'.exe') and is_windows) or (os.path.isfile('./'+path2prog+prog_name) and not is_windows) or not force_fpc:
-        print('\n'+prog_name+' already compiled')
+    if (os.path.isfile(path2prog+'\\'+prog_name+'.exe') and is_windows) or (os.path.isfile(Path(path2prog)/prog_name) and not is_windows):
+        if force_fpc:
+            if show_term_output == True:
+                output_direct = None
+            else:
+                output_direct = subprocess.DEVNULL
+            try:
+                subprocess.check_call(['fpc', prog_name.lower()+'.pas'], encoding='utf8', stdout=output_direct, cwd=path2prog, shell=is_windows)
+            except subprocess.CalledProcessError:
+                print(path2prog)
+                raise ChildProcessError
+            if verbose:
+                print('\n'+prog_name+' already existed but was recompiled')
+        else:
+            if verbose:  
+                print('\n'+prog_name+' already compiled')
     
     else: # Compile the program
         if show_term_output == True:
@@ -34,9 +50,15 @@ def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True):
             output_direct = subprocess.DEVNULL
         try:
             subprocess.check_call(['fpc', prog_name.lower()+'.pas'], encoding='utf8', stdout=output_direct, cwd=path2prog, shell=is_windows)
+            if verbose:
+                print('\n'+prog_name+' was not compiled so we did it!')
         except subprocess.CalledProcessError:
             print(path2prog)
             raise ChildProcessError    
+
+    
+
+    
 
 
 

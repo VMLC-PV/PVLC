@@ -13,6 +13,8 @@ import subprocess,shutil,os,glob,tqdm,parmap,multiprocessing,random,sys,platform
 from itertools import repeat
 import warnings
 import sys
+# package by VLC
+from VLC_units.simu.compile_prog import *
 # Don't show warnings
 warnings.filterwarnings("ignore")
 
@@ -54,9 +56,14 @@ def run_code(name_prog,path2prog,str2run='',show_term_output=False):
     
     if is_windows:
         cmd_list = name_prog.lower()+'.exe ' + str2run
+        if not os.path.isfile(path2prog+'\\'+name_prog.lower()+'.exe'):
+            fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=False)
     else : 
         cmd_list = './'+name_prog.lower()+' ' + str2run
+        if not os.path.isfile('./'+path2prog+'\\'+name_prog.lower()):
+            fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=False)
     try:
+        
         subprocess.check_call(cmd_list.split(), encoding='utf8', stdout=output_direct, cwd=path2prog, shell=is_windows)
     except subprocess.CalledProcessError:
         print(path2prog)
