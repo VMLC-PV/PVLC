@@ -19,25 +19,27 @@ from VLC_units.simu.compile_prog import *
 warnings.filterwarnings("ignore")
 
 
-def run_code(name_prog,path2prog,str2run='',show_term_output=False):
+def run_code(name_prog,path2prog,str2run='',show_term_output=False,verbose=False):
     """Run program 'name_prog' in the folder specified by 'path2prog'.
 
     Parameters
     ----------
     name_prog : str
         name of the program to run.
-
-    st2run : str
-        String to run for the name_prog.
-    
-    System : str
-        String to specify the operating system.
-        The options are: 'Linux' or 'Windows'
     
     path2prog : str
         path to the folder containing zimt 
         ('./zimt' in Linux and 'zimt.exe' in Windows ).
 
+    st2run : str
+        String to run for the name_prog.
+    
+    show_term_output : bool, optional
+        If True, show the terminal output of the program, by default False.
+    
+    verbose : bool, optional
+        Verbose?, by default False.
+    
     Returns
     -------
     
@@ -57,11 +59,11 @@ def run_code(name_prog,path2prog,str2run='',show_term_output=False):
     if is_windows:
         cmd_list = name_prog.lower()+'.exe ' + str2run
         if not os.path.isfile(path2prog+'\\'+name_prog.lower()+'.exe'):
-            fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=False)
+            fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=verbose)
     else : 
         cmd_list = './'+name_prog.lower()+' ' + str2run
         if not os.path.isfile('./'+path2prog+'\\'+name_prog.lower()):
-            fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=False)
+            fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=verbose)
     try:
         
         subprocess.check_call(cmd_list.split(), encoding='utf8', stdout=output_direct, cwd=path2prog, shell=is_windows)

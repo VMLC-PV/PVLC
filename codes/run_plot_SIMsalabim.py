@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from pathlib import Path
-# package by VLC
+# Import homemade package by VLC
 from VLC_units.plots.SimSS_plots import *
 from VLC_units.simu.runsim import *
 from VLC_units.simu.get_input_par import *
@@ -32,8 +32,8 @@ def run_plot_SIMsalabim():
                 pass
 
 
-    path2SIMsalabim = Path(os.getcwd()) /'Simulation_program/SIMsalabim_v425/SimSS'
-    run_simu = True #Rerun simulation
+    path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v425/SimSS')                    # Path to SimSS
+    run_simu = True                                                                                             # Rerun simulation
 
     ## Figures control
     ext_save_pic = '.jpg'
@@ -95,8 +95,8 @@ def run_plot_SIMsalabim():
             JV_name = JV_name +'_'+name +'_{:.2e}'.format(j)
             Var_name = Var_name +'_'+ name +'_{:.2e}'.format(j)
         str_lst.append(fixed_str+ ' ' +str_line+ '-JV_file '+JV_name+ '.dat -Var_file '+Var_name+'.dat')# -ExpJV '+JVexp_lst[idx])
-        JV_files.append(Path(path2SIMsalabim) / str(JV_name+ '.dat'))
-        Var_files.append(Path(path2SIMsalabim) / str(Var_name+ '.dat'))
+        JV_files.append(os.path.join(path2SIMsalabim , str(JV_name+ '.dat')))
+        Var_files.append(os.path.join(path2SIMsalabim , str(Var_name+ '.dat')))
         labels.append(lab)
         JVexp_lst.append('')
         code_name_lst.append('SimSS')
@@ -130,7 +130,7 @@ def run_plot_SIMsalabim():
                 data_JVexp = pd.DataFrame()
 
 
-            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.5,1.1],ylimits=[-25,5])
+            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.5,1.1],ylimits=[-25,5],pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)))
             # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=2,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp)
 
         ## Plot Var_file
@@ -141,7 +141,7 @@ def run_plot_SIMsalabim():
         if plot_nrj_diag:
             L_LTL = ChosePar('L_LTL',GetParFromStr(Simu_str),ParFileDic) # Needed for nrj_diag plot
             L_RTL = ChosePar('L_RTL',GetParFromStr(Simu_str),ParFileDic) # Needed for nrj_diag plot
-            SIMsalabim_nrj_diag(num_nrj_diag_plot ,data_var,L_LTL,L_RTL,legend=False,Background_color=True,no_axis=False,pic_save_name='Energy_diagram'+ext_save_pic)
+            SIMsalabim_nrj_diag(num_nrj_diag_plot ,data_var,L_LTL,L_RTL,legend=False,Background_color=True,no_axis=False,pic_save_name=os.path.join(path2SIMsalabim,'Energy_diagram'+ext_save_pic))
 
         # Carrier density plot
         if plot_densities:

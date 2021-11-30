@@ -26,7 +26,7 @@ def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True,verbose=Tr
     is_windows = (System == 'Windows')          # Check if we are on Windows
     path2prog = str(path2prog)                  # Convert to string
     # Check if the program is already compiled
-    if (os.path.isfile(path2prog+'\\'+prog_name+'.exe') and is_windows) or (os.path.isfile(Path(path2prog)/prog_name) and not is_windows):
+    if (os.path.isfile(os.path.join(path2prog,prog_name+'.exe')) and is_windows) or (os.path.isfile(os.path.join(path2prog,prog_name)) and not is_windows):
         if force_fpc:
             if show_term_output == True:
                 output_direct = None
@@ -38,7 +38,7 @@ def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True,verbose=Tr
                 print(path2prog)
                 raise ChildProcessError
             if verbose:
-                print('\n'+prog_name+' already existed but was recompiled')
+                print('\n'+prog_name+' already existed but was recompiled'+'\n')
         else:
             if verbose:  
                 print('\n'+prog_name+' already compiled')
@@ -51,7 +51,7 @@ def fpc_prog(prog_name,path2prog,show_term_output=True,force_fpc=True,verbose=Tr
         try:
             subprocess.check_call(['fpc', prog_name.lower()+'.pas'], encoding='utf8', stdout=output_direct, cwd=path2prog, shell=is_windows)
             if verbose:
-                print('\n'+prog_name+' was not compiled so we did it!')
+                print('\n'+prog_name+' was not compiled so we did it!'+'\n')
         except subprocess.CalledProcessError:
             print(path2prog)
             raise ChildProcessError    

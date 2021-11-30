@@ -1620,12 +1620,14 @@ def Store_output_in_folder(filenames,folder_name,path):
     """    
 
     # Create directory if it does not exist
-    if not os.path.exists(path+folder_name):
-        os.makedirs(path+folder_name)
+    if not os.path.exists(os.path.join(path,folder_name)):
+        os.makedirs(os.path.join(path,folder_name))
     # move file into the new folder
     for i in filenames:
-        if os.path.exists(path+i):
-            os.replace(path+i,path+folder_name+i)
+        if os.path.exists(os.path.join(path,i)):
+            os.replace(os.path.join(path,i),os.path.join(path,folder_name,i))
+        else:
+            print('File {} does not exist'.format(os.path.join(path,i)))
 
 
 
