@@ -3,23 +3,13 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
-import os,sys,platform,tqdm,parmap,multiprocessing,warnings
+import os,sys,platform,warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.lines import Line2D
-from scipy.integrate import simps
-from scipy.optimize import curve_fit
 from scipy import constants
 from time import time
-from itertools import repeat
-# Don't show warnings
-warnings.filterwarnings("ignore")
-# # Homemade package import
-# import plot_settings_screen
-# from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,zimt_Voltage_transient_plot,Store_output_in_folder,clean_up_output
-# from tVG_gen import zimt_TPV
 # Import homemade package by VLC
 from VLC_units.plots.ZimT_plots import *
 from VLC_units.simu.runsim import *
@@ -68,7 +58,6 @@ def TPC(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
             except:
                 pass
 
-    slash = '/'
     curr_dir = os.getcwd()              # Current working directory
     if path2ZimT is None:
         path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v425/ZimT')                  # Path to ZimT in curr_dir
@@ -100,6 +89,13 @@ def TPC(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
         if 'steps' in input_dic.keys():
             steps = input_dic['steps']
 
+    ## Prepare strings to run
+    # Fixed string
+    if fixed_str is None:
+        if verbose:
+            print('No fixed string given, using default value')
+        fixed_str = ''  # add any fixed string to the simulation command
+
     # Initialize 
     code_name_lst,str_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
     idx = 0
@@ -116,7 +112,7 @@ def TPC(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
         for Gen in Gens:
             for G0 in G0s:
                 zimt_TPC(tmin,tmax,Gen,G0,tpulse,steps=100,time_exp = True, tVG_name=os.path.join(path2ZimT,'tVG_TPC_G_{:.1e}_G0_{:.2e}.txt'.format(Gen,G0)))
-                str_lst.append(' -tVG_file tVG_TPC_G_{:.1e}_G0_{:.2e}.txt -tj_file tj_TPC_G_{:.1e}_G0_{:.2e}.dat'.format(Gen,G0,Gen,G0))
+                str_lst.append(fixed_str+' -tVG_file tVG_TPC_G_{:.1e}_G0_{:.2e}.txt -tj_file tj_TPC_G_{:.1e}_G0_{:.2e}.dat'.format(Gen,G0,Gen,G0))
                 code_name_lst.append('zimt')
                 path_lst.append(path2ZimT)
                 tVG_lst.append('tVG_TPC_G_{:.1e}_G0_{:.2e}.txt'.format(Gen,G0))
@@ -145,7 +141,7 @@ def TPC(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
             idx = 0
             for Gen in Gens:
                 data_tj = pd.read_csv(os.path.join(path2ZimT,Store_folder,'tj_TPC_G_{:.1e}_G0_{:.2e}.dat'.format(Gen,G0)),delim_whitespace=True)
-                zimt_tj_plot(num_fig_tjs,data_tj,y=['Jext'],labels=sci_notation(Gen/1e6,sig_fig=1),colors=colors[idx],plot_type=0,save_yes=True,legend=False,pic_save_name = curr_dir+slash+path2ZimT+Store_folder+'transient.jpg')
+                zimt_tj_plot(num_fig_tjs,data_tj,y=['Jext'],labels=sci_notation(Gen/1e6,sig_fig=1),colors=colors[idx],plot_type=0,save_yes=True,legend=False,pic_save_name = os.path.join(path2ZimT,Store_folder,'transient.jpg'))
                 idx += 1
 
     ########################################################

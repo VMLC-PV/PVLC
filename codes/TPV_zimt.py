@@ -3,17 +3,13 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
-import os,sys,platform,tqdm,parmap,multiprocessing,warnings
+import os,sys,platform,warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.lines import Line2D
-from scipy.integrate import simps
-from scipy.optimize import curve_fit
 from scipy import constants
 from time import time
-from itertools import repeat
 # Don't show warnings
 warnings.filterwarnings("ignore")
 # # Homemade package import
@@ -67,7 +63,6 @@ def TPV(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
             except:
                 pass
 
-    slash = '/'
     curr_dir = os.getcwd()              # Current working directory
     if path2ZimT is None:
         path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v425/ZimT')                  # Path to ZimT in curr_dir
@@ -76,7 +71,7 @@ def TPV(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
     ## Physics constants
     q = constants.value(u'elementary charge')
 
-    # TPV input
+    # TPV inputs
     # see zimt_TPV in tVG_gen.py
     if input_dic is None:
         tmin = 1e-8                                     # First time step after 0 [s]
@@ -99,6 +94,13 @@ def TPV(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
         if 'steps' in input_dic.keys():
             steps = input_dic['steps']
 
+     ## Prepare strings to run
+    # Fixed string
+    if fixed_str is None:
+        if verbose:
+            print('No fixed string given, using default value')
+        fixed_str = ''  # add any fixed string to the simulation command
+
     # Initialize 
     code_name_lst,str_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
     idx = 0
@@ -115,7 +117,7 @@ def TPV(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, p
         for Gen in Gens:
             for G0 in G0s:
                 zimt_TPV(tmin,tmax,Gen,G0,tpulse,steps=100,time_exp = True, tVG_name=os.path.join(path2ZimT,'tVG_TPV_G_{:.1e}_G0_{:.2e}.txt'.format(Gen,G0)))
-                str_lst.append(' -tVG_file tVG_TPV_G_{:.1e}_G0_{:.2e}.txt -tj_file tj_TPV_G_{:.1e}_G0_{:.2e}.dat'.format(Gen,G0,Gen,G0))
+                str_lst.append(fixed_str+' -tVG_file tVG_TPV_G_{:.1e}_G0_{:.2e}.txt -tj_file tj_TPV_G_{:.1e}_G0_{:.2e}.dat'.format(Gen,G0,Gen,G0))
                 code_name_lst.append('zimt')
                 path_lst.append(path2ZimT)
                 tVG_lst.append('tVG_TPV_G_{:.1e}_G0_{:.2e}.txt'.format(Gen,G0))

@@ -97,12 +97,13 @@ def CELIV(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True,
             tstep = input_dic['tstep']
         if 'steps' in input_dic.keys():
             steps = input_dic['steps'] 
+    
     ## Prepare strings to run
     # Fixed string
     if fixed_str is None:
         if verbose:
             print('No fixed string given, using default value')
-        fixed_str = '-Bulk_tr 1e19'  # add any fixed string to the simulation command
+        fixed_str = ''  # add any fixed string to the simulation command
 
     # Figures control
     size_fig = (16, 12)
