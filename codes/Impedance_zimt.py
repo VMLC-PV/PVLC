@@ -3,80 +3,120 @@
 ###################################################
 ## by Vincent M. Le Corre
 ## Package import
-import os,sys,platform,tqdm,parmap,multiprocessing,warnings,cmath
+import os,sys,platform,warnings,cmath
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mplcolors
 from matplotlib.ticker import LogFormatter
-from matplotlib.lines import Line2D
-from scipy.integrate import simps
-from scipy.optimize import curve_fit, leastsq
 from scipy import interpolate
 from scipy import constants
 from time import time
-from itertools import repeat
 from impedance.models.circuits import circuits as impcir
 from impedance import preprocessing as imppre
 from impedance import visualization as impvis
-## Don't show warnings
-warnings.filterwarnings("ignore")
-## Homemade package import
-import plot_settings_screen
-from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,Store_output_in_folder,clean_up_output,preprocess_Impedance_data,get_complex_impedance,fit_sin_func,sin_func
-from tVG_gen import zimt_impedance
-
+# Import homemade package by VLC
+from VLC_units.plots.ZimT_plots import *
+from VLC_units.simu.runsim import *
+from VLC_units.simu.get_input_par import *
+from VLC_units.make_tVG.tVG_gen import *
+from VLC_units.cleanup_folder.clean_folder import *
+from VLC_units.useful_functions.aux_func import *
+from VLC_units.impedance.impedance_func import *
 ## Main Program
-def Impedance(): 
-    ## General Inputs
-    warnings.filterwarnings("ignore")   # Don't show warnings
-    system = platform.system()          # Operating system
-    print(system)
-    max_jobs = os.cpu_count()-2                       # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
-    if system == 'Windows':             # cannot easily do multiprocessing in Windows
-            max_jobs = 1
-            slash = '\\'
-            try:
-                os.system('taskkill.exe /F /IM zimt.exe')
-                print('taskkill excecuted')
-            except:
-                print('no taskkill excecuted')
-    else:
-        slash = '/'
+def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, plot_tjs = False, plot_Nyquist = True, plot_Bode = True, calc_capacitance = True, nFcm2 =True, get_capa_fit = True, move_ouput_2_folder = True, Store_folder = 'Impedance',clean_output = False,verbose = True):  
+    """Run TPC simulation using ZimT
 
-    curr_dir = os.getcwd()                           # Current working directory
-    path2ZimT = curr_dir+slash+'pascal_codes'+slash+'ZimT043_BETA'+slash  # Path to ZimT
-    paperdata = curr_dir+slash+'Paper_Sim_Data.txt'  # Path to txt Data File to be added to C/f plot, if paper_comparison is enabled. header: 'f C' delimiter: ' '
+    Parameters
+    ----------
+    fixed_str : str, optional
+        Add any fixed string to the simulation command for zimt, by default None.
+    input_dic : dict, optional
+        Dictionary with the input for the zimt_TPC function (see tVG_gen.py), by default None.
+    path2ZimT : str, optional
+        Path to ZimT, by default None
+    run_simu : bool, optional
+        Rerun simu?, by default True
+    plot_tjs : bool, optional
+        make plot ?, by default False
+    plot_Nyquist : bool, optional
+        Plot Nyquist plot?, by default True
+    plot_Bode : bool, optional
+        Plot Bode plot?, by default True
+    calc_capacitance : bool, optional
+        Calculate capacitance?, by default True
+    nFcm2 : bool, optional
+        Convert capacitance to nF/cm2, by default True
+    get_capa_fit : bool, optional
+        If True calculate capacitance by fitting sin wave to the signal,  else use fft, by default False
+    move_ouput_2_folder : bool, optional
+        Move output to folder?, by default True
+    Store_folder : str, optional
+        Folder name for storing output, by default 'TPC'
+    clean_output : bool, optional
+        Clean up output?, by default False
+    verbose : bool, optional
+        Verbose?, by default True
+    """       
+    ## General Inputs
+    warnings.filterwarnings("ignore")           # Don't show warnings
+    system = platform.system()                  # Operating system
+    max_jobs = os.cpu_count()-2                 # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    do_multiprocessing = True                      # Use multiprocessing
+    if system == 'Windows':                     # cannot easily do multiprocessing in Windows
+            max_jobs = 1
+            do_multiprocessing = False
+            try:                                # kill all running jobs to avoid conflicts
+                os.system('taskkill.exe /F /IM zimt.exe')
+            except:
+                pass
+
+    curr_dir = os.getcwd()              # Current working directory
+    if path2ZimT is None:
+        path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v425/ZimT')                  # Path to ZimT in curr_dir
 
     ## Physics constants
     q = constants.value(u'elementary charge')
     eps_0 = constants.epsilon_0
 
+    ## Impedance inputs
+    # see zimt_impedance in tVG_gen.py
+
     ## Simulation input
-    run_simu = 0                                           # Rerun simu? (bool)
-    plot_tjs = 0                                           # make tJ and tV plots? (bool)
-    plot_output = 1                                        # make Nyquist and Bode plots? (bool)
-    move_ouput_2_folder = True                             # (bool)
-    Store_folder = 'Impedance'+slash
-    clean_output = False                                   # Make output plots? (bool)
-    make_fit = False                                       # make fit dn/dt (bool)
-    calc_capacitance = 1                                   # calculate capacitance? (bool)
-    nFcm2 = 1                                              # Capacitance unit (bool)
-    paper_comparison = 0                                   # compare C/f with given data? (bool)
-    L = 100e-9                                             # Device thickness (m)
-    eps = 3.5                                              # active layer permittivity, same as in device_parameters.txt
-    area = 1e-6                                            # Device area (m^2), same as in device_parameters.txt
-    C_geo = (eps*eps_0*area/L)                             # geometric capacitance (Ohm)
-    freqs1 = np.geomspace(1e2,1e4,num=20,endpoint=False)
-    freqs2 = np.geomspace(1e4,1e9,num=50,endpoint=True)
-    freqs = np.append(freqs1, freqs2)                      # frequencies to simulate (Hz)
+    if input_dic is None:
+        freqs1 = np.geomspace(1e0,1e4,num=20,endpoint=False)
+        freqs2 = np.geomspace(1e4,5e8,num=20,endpoint=True)
+        freqs = np.append(freqs1, freqs2)                      # frequencies to simulate (Hz)
+        Vapps = [0]#[-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
+        Vamp = 0.02                       # Amplitude voltage perturbation
+        Gen = 1e27                        # Average generation rate 
+    else:
+        freqs = input_dic['freqs']
+        Vapps = input_dic['Vapps']
+        Vamp = input_dic['Vamp']
+        Gen = input_dic['Gen']   
+    sun = 1e27                      # generation rate at 1 sun
     freqs_interp = np.geomspace(1e2,1e7,num=2000)          # same but more dense range of frequencies (for interpolation)
-    # print(freqs)
-    Vapps = [-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
-    Vamp = 0.01                       # Amplitude voltage perturbation
-    Gen = 0e27                        # Average generation rate 
-    sun = 2.7e27                      # generation rate at 1 sun
+
+    ## Prepare strings to run
+    # Fixed string
+    if fixed_str is None:
+        if verbose:
+            print('No fixed string given, using default value')
+        fixed_str = ' -accDens 0.04'  # add any fixed string to the simulation command
+    ParFileDic = ReadParameterFile(f"{path2ZimT}/device_parameters.txt") # Read device parameters
+
+    # Calculate geometric capacitance
+    L = float(ChosePar('L',GetParFromStr(fixed_str),ParFileDic))
+    L_LTL = float(ChosePar('L_LTL',GetParFromStr(fixed_str),ParFileDic))
+    L_RTL = float(ChosePar('L_RTL',GetParFromStr(fixed_str),ParFileDic))
+    eps_r = float(ChosePar('eps_r',GetParFromStr(fixed_str),ParFileDic))
+    C_geo = (eps_r*eps_0/(L-L_LTL-L_RTL))                             # geometric capacitance (Ohm)
+    
+    ## Initialize 
+    str_lst,code_name_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
+    start = time()
 
     ## Figure control
     plottitle = 'ZimT: Organic Solar Cell  {:.0f}nm  {:.1f}sun'.format(L*1e9, Gen/sun)  # full title of plots
@@ -93,39 +133,30 @@ def Impedance():
     color1 = colors1[0]      # Color of left axis
     color2 = colors2[0]      # Color of right axis
 
-    ## Initialize 
-    str_lst,sys_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
-    start = time()
-    print('Vapps:', str(Vapps))
-
-    ###########################################################################
-    ### Run ZimT ##############################################################
-    ###########################################################################
-
+    ## Run simulations
     if run_simu:
         print('sim loop...')
         # Generate tVG files 
         for freq in freqs:
             for Vapp in Vapps:
-                zimt_impedance(Vapp,Vamp,freq,Gen,steps=200,tVG_name=path2ZimT
-                               +'tVG_{:.2f}V_f_{:.1e}Hz.txt'.format(Vapp,freq))
-                str_lst.append('-L '+str(L)+' -tVG_file '
+                zimt_impedance(Vapp,Vamp,freq,Gen,steps=200,tVG_name=os.path.join(path2ZimT,
+                               'tVG_{:.2f}V_f_{:.1e}Hz.txt'.format(Vapp,freq)))
+                str_lst.append(fixed_str+' -tVG_file '
                                +'tVG_{:.2f}V_f_{:.1e}Hz.txt '.format(Vapp,freq)
                                +'-tj_file '
                                +'tj_{:.2f}V_f_{:.1e}Hz.dat '.format(Vapp,freq))
-                sys_lst.append(system)
+                code_name_lst.append('zimt')
                 path_lst.append(path2ZimT)
                 tVG_lst.append('tVG_{:.2f}V_f_{:.1e}Hz.txt'.format(Vapp,freq))
                 tj_lst.append('tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapp,freq))
         
         # Run ZimT
-        # str_lst = str_lst[::-1]  # reverse list order to start with longest delays
-        p = multiprocessing.Pool(max_jobs)
-        results = parmap.starmap(run_zimt,list(zip(str_lst,sys_lst,path_lst)),
-                                 pm_pool=p, pm_processes=max_jobs,pm_pbar=True)
-        p.close()
-        p.join()
-    
+        if do_multiprocessing:
+            run_multiprocess_simu(run_code,code_name_lst,path_lst,str_lst,max_jobs)
+        else:
+            for i in range(len(str_lst)):
+                run_code(code_name_lst[i],path_lst[i],str_lst[i],show_term_output=True,verbose=verbose)
+         
     print('Calculation time {:.2f} s'.format(time() - start)) # Time in ,seconds
 
     
@@ -145,26 +176,40 @@ def Impedance():
     print('Z loop...')
     for idx in range(len(Vapps)):
         for freq in freqs:
-            with open(path2ZimT+Store_folder  # open in read mode
-                      +'tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapps[idx],freq), 'r') as file:
+            with open(os.path.join(path2ZimT,Store_folder,'tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapps[idx],freq)), 'r') as file:
                 data_tj2 = pd.read_csv(file, delim_whitespace=True)
-            Jmo[idx].append(data_tj2['Jdev'])  # save original data for comparison
+            Jmo[idx].append(data_tj2['Jext'])  # save original data for comparison
             tmo[idx].append(data_tj2['t'])
             data_tj2 = preprocess_Impedance_data(data_tj2,freq)
-            Jm[idx].append(data_tj2['Jdev'])  # save preprocessed data for comparison
+            Jm[idx].append(data_tj2['Jext'])  # save preprocessed data for comparison
             tm[idx].append(data_tj2['t'])
-            comp = get_complex_impedance(data_tj2,freq)
-            ## save
-            Zs[idx].append(comp)
-            ReZ[idx].append(comp.real)
-            ImZ[idx].append(comp.imag)
-            Zmag[idx].append(abs(comp))
-            phase[idx].append(cmath.phase(comp))
-            Cap[idx].append((1/comp).imag/(2*np.pi*freq))
+
+            if get_capa_fit:
+            ## OLD way of calculating Z
+                comp = get_complex_impedance(data_tj2,freq)
+                # save
+                Zs[idx].append(comp)
+                ReZ[idx].append(comp.real)
+                ImZ[idx].append(comp.imag)
+                Zmag[idx].append(abs(comp))
+                phase[idx].append(cmath.phase(comp))
+                Cap[idx].append((1/comp).imag/(2*np.pi*freq))
+
+            else:
+            ## New way of calculating Z 
+                comp,C = calcZC(data_tj2['Vext'].to_numpy(),data_tj2['Jext'].to_numpy(),freq,'RCp') 
+                Zs[idx].append(comp)
+                ReZ[idx].append(comp.real)
+                ImZ[idx].append(comp.imag)
+                Zmag[idx].append(abs(comp))
+                phase[idx].append(cmath.phase(comp))
+                Cap[idx].append(C)
+
+
         ## save f and Z in file for later use of impedance.py
         fZ = np.transpose([freqs, np.asarray(ReZ[idx]), np.asarray(ImZ[idx])])
         fZ = fZ[np.asarray(ImZ[idx])<0]  # only save realistic data: Im(Z)<0
-        fZ_file[idx] = path2ZimT+Store_folder+'fZ_{:.2f}V.txt'.format(Vapps[idx])
+        fZ_file[idx] = os.path.join(path2ZimT,Store_folder,'fZ_{:.2f}V.txt'.format(Vapps[idx]))
         np.savetxt(fZ_file[idx], fZ, delimiter=',')  # ',' needed for impedance.preprocessing
 
     ## convert lists to arrays to enable calculations
@@ -229,33 +274,34 @@ def Impedance():
     ###########################################################################
 
     if plot_tjs:
-        print('tJ loop...')
+        if verbose:
+            print('Make tj plots...')
+
         lines = ['-', '--', ':', '-.', 'x-', 'x--', 'x:', 'x-.', 'o-', 'o--', 'o:',
                 'o-.', '+-', '+--', '+-.', '+:']  # linestyles for up to 16 Vapps
         for idx in range(len(Vapps)):
             for i in range(len(freqs)):
-                with open(path2ZimT+Store_folder  # open in read mode
-                        +'tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapps[idx],freqs[i]), 'r') as file:
+                with open(os.path.join(path2ZimT,Store_folder, 'tj_{:.2f}V_f_{:.1e}Hz.dat'.format(Vapps[idx],freqs[i])), 'r') as file:
                     data_tj = pd.read_csv(file, delim_whitespace=True)
                 ## norm data to interval (-1, 1)
-                data_tj['Jdev_norm'] = data_tj['Jdev']/max(data_tj['Jdev'])*10
-                data_tj['Vdev_norm'] = data_tj['Vdev']/max(data_tj['Vdev'])*10
+                data_tj['Jext_norm'] = data_tj['Jext']/max(data_tj['Jext'])*10
+                data_tj['Vext_norm'] = data_tj['Vext']/max(data_tj['Vext'])*10
                 data_tj['t_norm'] = data_tj['t']/max(data_tj['t'])*10
                 if i%int((len(freqs)-1)/2) == 0:    # plot 3 lines per Vapp
                     ## plot normed J/t
-                    zimt_tj_plot(100, data_tj, x='t_norm', y=['Jdev_norm'],
+                    zimt_tj_plot(100, data_tj, x='t_norm', y=['Jext_norm'],
                                 ylimits= [-1.1,1.1],
                                 labels=sci_notation(freqs[i],sig_fig=0)+' Hz, '+str(Vapps[idx])+' V',
                                 colors=colors[i], line_type=[lines[idx]],
-                                plot_type=0, save_yes=True, legend=True, figsize=size_fig,
-                                title=plottitle+'  Normed J')
+                                plot_type=0, save_yes=True, legend=True, 
+                                )
                     ## plot normed V/t
-                    zimt_tj_plot(101, data_tj, x='t_norm', y=['Vdev_norm'],
+                    zimt_tj_plot(101, data_tj, x='t_norm', y=['Vext_norm'],
                                 ylimits= [-1.1,1.1],
                                 labels=sci_notation(freqs[i],sig_fig=0)+' Hz '+str(Vapps[idx])+' V',
                                 colors=colors[i], line_type=[lines[idx]],
-                                plot_type=0, save_yes=True, legend=True, figsize=size_fig,
-                                title=plottitle+' Normed V')
+                                plot_type=0, save_yes=True, legend=True, 
+                                )
 
                 ## check whether the sin fit works
                 if i%int((len(freqs)-1)/2) == 0:  # test sin fit of 3 curves per Vapp
@@ -277,8 +323,9 @@ def Impedance():
     ### Plots #################################################################
     ###########################################################################
 
-    if plot_output:
-        print('plotting...')
+    if plot_Nyquist:
+        if verbose: 
+            print('Make Nyquist plot...')
         ## Nyquist plot Im(Z)/Re(Z)
         try: 
             ax = [[] for _ in range(len(Vapps))]
@@ -310,11 +357,14 @@ def Impedance():
                 plt.ylabel(r'-$\,$Reactance  -$\,$Z'+'\'\'  '+r'[$\Omega$]')
                 plt.title(plottitle)
                 # plt.tight_layout()
-                plt.savefig(path2ZimT+Store_folder+savetitle+'_Impedance_Nyquist_'+str(Vapps[idx])+'V.png',
+                plt.savefig(os.path.join(path2ZimT,Store_folder,savetitle+'_Impedance_Nyquist_'+str(Vapps[idx])+'V.png'),
                             dpi=300, bbox_inches='tight', transparent=True)
         except:
             print('Nyquist Plot failed.')
 
+    if plot_Bode:
+        if verbose: 
+            print('Make Bode plot...')
         ## Bode plot Z/f and phi/f
         try:
             fig, ax1 = plt.subplots(figsize=size_fig)
@@ -330,7 +380,7 @@ def Impedance():
             ax2.legend(title=r'$\phi$', fontsize='small')
             plt.title(plottitle)
             plt.tight_layout()
-            plt.savefig(path2ZimT+Store_folder+savetitle+'_Impedance_Z_phi_f.png',
+            plt.savefig(os.path.join(path2ZimT,Store_folder,savetitle+'_Impedance_Z_phi_f.png'),
                         dpi=300,transparent=True, bbox_inches='tight')
         except:
             print('Bode plot Z,phi/f failed')
@@ -345,7 +395,7 @@ def Impedance():
                 ax3.semilogx(freqs, ReZ[i],'o-',color=colors1[i], label='{:.1f} V'.format(Vapps[i]))
             plt.legend(fontsize='small')
             plt.title(plottitle)
-            plt.savefig(path2ZimT+Store_folder+savetitle+'_Impedance_ReZ_f.png',
+            plt.savefig(os.path.join(path2ZimT,Store_folder,savetitle+'_Impedance_ReZ_f.png'),
                         dpi=300,transparent=True, bbox_inches='tight')
         except:
             print('Bode plot Re(Z)/f failed')
@@ -360,18 +410,18 @@ def Impedance():
                 ax4.semilogx(freqs, -ImZ[i],'o-',color=colors2[i], label='{:.1f} V'.format(Vapps[i]))
             plt.legend(fontsize='small')
             plt.title(plottitle)
-            plt.savefig(path2ZimT+Store_folder+savetitle+'_Impedance_ImZ_f.png',
+            plt.savefig(os.path.join(path2ZimT,Store_folder,savetitle+'_Impedance_ImZ_f.png'),
                         dpi=300,transparent=True, bbox_inches='tight')
         except:
             print('Bode plot Im(Z)/f failed')
 
         ## Bode plot C/f
         if nFcm2:
-            Cap_max = Cap_max/(area*1e-9/1e-4)  # to get nF/cm^2
-            Cap = Cap/(area*1e-9/1e-4)  # to get nF/cm^2
-            C_geo = C_geo/(area*1e-9/1e-4)  # to get nF/cm^2
+            Cap_max = Cap_max/(1e-9/1e-4)  # to get nF/cm^2
+            Cap = Cap/(1e-9/1e-4)  # to get nF/cm^2
+            C_geo = C_geo/(1e-9/1e-4)  # to get nF/cm^2
             for idx in range(len(Vapps)):
-                circ_fit[idx][2] = circ_fit[idx][2]/(area*1e-9/1e-4)
+                circ_fit[idx][2] = circ_fit[idx][2]/(1e-9/1e-4)
                     
         try:
             fig4, ax5 = plt.subplots(figsize=size_fig)
@@ -379,28 +429,24 @@ def Impedance():
             ax5.set_ylabel('Capacitance  C  [F]')
             if nFcm2:
                 ax5.set_ylabel(r'Capacitance  C  [nF/cm$^2$]')
-                ax5.set_ylim(-5, 83)
-                ax5.set_xlim(1e2, 1e9)
+                ax5.set_ylim(-5, 60)
+                ax5.set_xlim(1e0, 1e9)
             else:
                 ax5.set_yscale('log')
             for idx in range(len(Vapps)):
-                ax5.axhline(circ_fit[idx][2]*area, ls='--', c=colors1[idx])
+                ax5.axhline(circ_fit[idx][2], ls='--', c=colors1[idx])
                 ## Cap_max will be totally off when semi-circle hasn't reached its maximum
                 if np.isclose(circ_fit[idx][2], Cap_max[idx], rtol=.1):
-                    ax5.axhline(Cap_max[idx]*area, ls=':', c=colors1[idx])
-                ax5.semilogx(freqs, Cap[idx]*area, 'o-', color=colors1[idx], label='{:.1f} V, ZimT'.format(Vapps[idx]))
-            if paper_comparison:
-                with open(paperdata, 'r') as file:
-                    paper = pd.read_csv(file, sep=' ')
-                freq_paper, C_paper = paper['f'], paper['C']
-                ax5.plot(freq_paper, C_paper, 'r', label = 'Ruhstaller\'s simulation')
+                    ax5.axhline(Cap_max[idx], ls=':', c=colors1[idx])
+                ax5.semilogx(freqs, Cap[idx], 'o-', color=colors1[idx], label='{:.1f} V, ZimT'.format(Vapps[idx]))
+
             ## black lines for legend
             ax5.plot([], [], ls='--', c='k', label='equivalent circuit fit')
             ax5.plot([], [], ls=':', c='k', label='Nyquist interpolation')
             ax5.axhline(C_geo, c='k', label='geometric capacitance')
             plt.legend(fontsize='small')
             plt.title(plottitle)
-            plt.savefig(path2ZimT+Store_folder+savetitle+'_Impedance_C_f.png',
+            plt.savefig(os.path.join(path2ZimT,Store_folder,savetitle+'_Impedance_C_f.png'),
                         dpi=300,transparent=True, bbox_inches='tight')
         except:
             print('Bode plot C/f failed')
@@ -410,9 +456,9 @@ def Impedance():
 
     ## Clean-up outputs from folder
     if clean_output: # delete all outputs
-        clean_up_output('tj',path2ZimT+Store_folder)
-        clean_up_output('tVG',path2ZimT+Store_folder)
-        print('Ouput data was deleted from '+path2ZimT+Store_folder)
+        clean_up_output('tj',os.path.join(path2ZimT,Store_folder))
+        clean_up_output('tVG',os.path.join(path2ZimT,Store_folder))
+        print('Ouput data was deleted from '+os.path.join(path2ZimT,Store_folder))
 
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 
