@@ -116,3 +116,40 @@ def get_complex_impedance(df,f):
 
     return (ampli_Vdev/ampli_Jdev)*complex(np.cos(-phi),np.sin(-phi)) 
 
+from scipy import fftpack
+def calcZC(tV, tJ, freq, equalCircuit = 'RCp'):
+    """Calculate the complex impedance and capacitance from the transient signal
+
+    Parameters
+    ----------
+    tV : np.array
+        Vector of the voltage signal
+    tJ : np.array
+        Vector of the current output signal
+    freq : float
+        Frequency of the measurement in Hz
+    equalCircuit : str
+        equivalent circuit of the measurement ('RCs' = RC series or 'RCp' = RC parallel), by default 'RCp'
+
+    Returns
+    -------
+    Z,C : complex, float
+        Complex impedance and capacitance
+    """    
+    
+    # Take fourrier transform of the signal
+    tV_fft = fftpack.fft(tV)/len(tV)
+    tV_fft = tV_fft[0:round(len(tV)/2)]
+    tV_fft[0] = 0
+    tJ_fft = fftpack.fft(tJ)/len(tJ)
+    tJ_fft = tJ_fft[0:round(len(tJ)/2)]
+    tJ_fft[0] = 0
+
+    Z = max(tV_fft)/max(tJ_fft)
+
+    if equalCircuit == 'RCp':
+        C = 1/(2*np.pi*freq) * (1/Z).imag 
+    elif equalCircuit == 'RCs' :
+        C = -1/(2*np.pi*freq*Z.imag) 
+
+    return Z, C

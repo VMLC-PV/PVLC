@@ -181,6 +181,8 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
             data_tj2 = preprocess_Impedance_data(data_tj2,freq)
             Jm[idx].append(data_tj2['Jext'])  # save preprocessed data for comparison
             tm[idx].append(data_tj2['t'])
+
+            ## OLD way of calculating Z
             # comp = get_complex_impedance(data_tj2,freq)
             ## save
             # Zs[idx].append(comp)
@@ -191,22 +193,14 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
             # Cap[idx].append((1/comp).imag/(2*np.pi*freq))
 
 
-            # Test 
-            comp,C = calcZC(data_tj2['Vext'].to_numpy(),data_tj2['Jext'].to_numpy(),freq,'RCs') 
-            print(comp)
+            ## New way of calculating Z 
+            comp,C = calcZC(data_tj2['Vext'].to_numpy(),data_tj2['Jext'].to_numpy(),freq,'RCp') 
             Zs[idx].append(comp)
             ReZ[idx].append(comp.real)
             ImZ[idx].append(comp.imag)
             Zmag[idx].append(abs(comp))
             phase[idx].append(cmath.phase(comp))
-            # Cap[idx].append((1/comp).imag/(2*np.pi*freq))
             Cap[idx].append(C)
-            # tZ.append(Z)
-            # tC.append(C)
-            # absa = [abs(Z) for Z in tZ]
-            # realZ = [Z.real for Z in tZ]
-            # imagZ = [-Z.imag for Z in tZ]
-            # print(Cap)
 
 
         ## save f and Z in file for later use of impedance.py
