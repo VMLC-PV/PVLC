@@ -20,7 +20,8 @@ from VLC_units.simu.get_input_par import *
 from VLC_units.make_tVG.tVG_gen import *
 from VLC_units.cleanup_folder.clean_folder import *
 from VLC_units.useful_functions.aux_func import *
-from VLC_useful_func import TDCF_fit
+from VLC_units.TDCF.TDCF_utils import *
+
 
 # Main Program
 def TDCF(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'TDCF',clean_output = False,verbose = True):
@@ -65,7 +66,7 @@ def TDCF(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False,
     if path2ZimT is None:
         path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v425/ZimT')                  # Path to ZimT in curr_dir
 
-    make_fit = False                                            # Make fit dn/dt
+    make_fit = False                                            # Make fit dn/dt (Does not really work)
 
     ## Physics constants
     q = constants.value(u'elementary charge')

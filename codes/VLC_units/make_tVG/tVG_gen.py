@@ -315,7 +315,7 @@ def zimt_tdcf(tmin,tmax,Vpre,Vcol,Gen,tpulse,tstep,tdelay,width_pulse = 2e-9,tVp
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e') 
 
 
-def zimt_BACE(tmin,tmax,Gen,Vpre,Vextr,tstep,tLp = 20e-9,tVp = 10e-9,time_exp=False,steps=100,tVG_name='tVG.txt'):
+def zimt_BACE(tmin,tmax,Gen,Vpre,Vextr,tLp = 20e-9,tVp = 10e-9,time_exp=False,steps=100,tVG_name='tVG.txt'):
     """Make tVG file for bias-assisted charge extraction (BACE)
 
     Parameters
@@ -330,8 +330,6 @@ def zimt_BACE(tmin,tmax,Gen,Vpre,Vextr,tstep,tLp = 20e-9,tVp = 10e-9,time_exp=Fa
         initial applied voltage (or pre-bias) (unit: V)
     Vextr : float
         extraction voltage (unit: V)
-    tstep : float
-        time step for the linear regime (unit: s)
     tLp : float, optional
         LED pulse fall/rise time (unit: s), by default 20e-9
     tVp : float, optional
@@ -349,15 +347,11 @@ def zimt_BACE(tmin,tmax,Gen,Vpre,Vextr,tstep,tLp = 20e-9,tVp = 10e-9,time_exp=Fa
     if time_exp == True:
         t = np.geomspace(tmin,tmax,num=steps)
     else :
-        t = np.arange(tmin,tmax,tstep)
+        t = np.linspace(tmin,tmax,steps)
     t=np.insert(t,0,0)
     for i in t:
             V.append((Vpre-Vextr)*np.exp(-i/tVp)+Vextr)
             G=np.append(G,(Gen)*np.exp(-i/tLp))
-
-    # t=np.insert(t,0,0)
-    # V=np.insert(t,0,Vpre)
-    # G=np.insert(t,0,Gen)
 
     tVG = pds.DataFrame(np.stack([t,np.asarray(V),np.asarray(G)]).T,columns=['t','Vext','Gehp'])
 
