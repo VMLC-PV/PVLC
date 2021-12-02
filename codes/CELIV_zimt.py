@@ -64,7 +64,7 @@ def CELIV(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True,
     ## Physics constants
     q = constants.value(u'elementary charge')
 
-    ## CELIV input
+    ## CELIV inputs
     # see zimt_CELIV in tVG_gen.py
     if input_dic is None:
         if verbose:

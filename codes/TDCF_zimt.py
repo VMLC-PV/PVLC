@@ -3,97 +3,130 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
-import os,sys,platform,tqdm,parmap,multiprocessing,platform,warnings
+import os,sys,platform,warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.lines import Line2D
-from scipy.integrate import simps
-from scipy import integrate, interpolate
-from scipy.optimize import curve_fit
-from scipy import constants
 from time import time
-from itertools import repeat,product
-# Don't show warnings
-warnings.filterwarnings("ignore")
-# Homemade package import
-import plot_settings_screen
-from VLC_useful_func import sci_notation,run_zimt,zimt_tj_plot,TDCF_fit,Store_output_in_folder,clean_up_output
-from tVG_gen import zimt_tdcf
+from scipy import constants,interpolate
+from scipy.integrate import simps
+from scipy.optimize import curve_fit
+from matplotlib.lines import Line2D
+# Import homemade package by VLC
+from VLC_units.plots.ZimT_plots import *
+from VLC_units.simu.runsim import *
+from VLC_units.simu.get_input_par import *
+from VLC_units.make_tVG.tVG_gen import *
+from VLC_units.cleanup_folder.clean_folder import *
+from VLC_units.useful_functions.aux_func import *
+from VLC_useful_func import TDCF_fit
 
 # Main Program
-def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
-    """Run time-delayed collection field (TDCF) simulations
+def TDCF(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'TDCF',clean_output = False,verbose = True):
+    """Run TDCF simulation using ZimT
 
     Parameters
     ----------
-    L : float
-        Device total thickness (unit: m)
-
-    L_LTL : float
-        Left transport layer thickness (unit: m), by default 0
-    
-    L_RTL : float
-        Right transport layer thickness (unit: m), by default 0
-    
-    num_fig : int, optional
-        Starting figure number for the first plot, for the other figure the figure number will be incremented as num_fig + 1, by default 0
-
-    str2run : str, optional
-        Input string to run with ZimT,  by default ''
-
+    fixed_str : str, optional
+        Add any fixed string to the simulation command for zimt, by default None.
+    input_dic : dict, optional
+        Dictionary with the input for the zimt_TDCF function (see tVG_gen.py), by default None.
     path2ZimT : str, optional
-        Path to folder containing ./ZimT or zimt.exe in current directory, by default = ''
-
+        Path to ZimT, by default None
+    run_simu : bool, optional
+        Rerun simu?, by default True
+    plot_tjs : bool, optional
+        make plot ?, by default True
+    move_ouput_2_folder : bool, optional
+        Move output to folder?, by default True
     Store_folder : str, optional
-        Path to folder where the output of the simulation is stored in path2ZimT directory, by default = ''
-
-    Returns
-    -------
-    
-
-    """
+        Folder name for storing output, by default 'TDCF'
+    clean_output : bool, optional
+        Clean up output?, by default False
+    verbose : bool, optional
+        Verbose?, by default True
+    """  
     ## General Inputs
-    warnings.filterwarnings("ignore")   # Don't show warnings
+    warnings.filterwarnings("ignore")           # Don't show warnings
     system = platform.system()                  # Operating system
-    max_jobs = os.cpu_count()-2                        # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
-    if system == 'Windows':             # cannot easily do multiprocessing in Windows
+    max_jobs = os.cpu_count()-2                 # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    do_multiprocessing = True                      # Use multiprocessing
+    if system == 'Windows':                     # cannot easily do multiprocessing in Windows
             max_jobs = 1
-            slash = '/'
-            try:
+            do_multiprocessing = False
+            try:                                # kill all running jobs to avoid conflicts
                 os.system('taskkill.exe /F /IM zimt.exe')
             except:
                 pass
-    else:
-        slash = '/'
 
-    curr_dir = os.getcwd()                                      # Current working directory
-    path2ZimT = path2ZimT+slash                                 # Path to ZimT in curr_dir
-    Store_folder = Store_folder+slash                           # Path to folder containing output data in curr_dir
-    run_simu = False                                            # Rerun simu?  
-    move_ouput_2_folder = True                                  # Move (True) output of simulation to Store_folder
-    clean_output = False                                        # Clean output after simulation (delete files)
+    
+    curr_dir = os.getcwd()              # Current working directory
+    if path2ZimT is None:
+        path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v425/ZimT')                  # Path to ZimT in curr_dir
+
     make_fit = False                                            # Make fit dn/dt
 
     ## Physics constants
     q = constants.value(u'elementary charge')
     eps_0 = constants.value(u'electric constant')
 
-    ## Simulation input for zimt_tdcf (see tVG_gen.py)   
-    tmin = 1e-10                                                # First time step after 0
-    tcol = 30e-6                                                 # tmax = tcol + tdelay  = final time step
-    Vpres = [0.99]#[-0.5,0,0.2,0.4,0.6,0.7,0.8,0.85,0.9,1]#,0.85]      # Initial applied voltage (steady-state)
-    Vcol = -2.5
-    Gens = [1e21]                                               # Max generation rate for the gaussian laser pulse
-    tpulse = 3e-9                                               # Time at which the pulse occurs, needs to be changed if width_pulse is modified
-    tstep = 1e-9
-    delays = np.geomspace(5e-9,1e-6,num=10) #[6e-9]                                             # Delays for TDCF simulation
-    width_pulse = 6e-9
-    time_exp = True
-    steps = 200
+    ## TDCF Inputs
+    # see zimt_tdcf in tVG_gen.py
+    if input_dic is None:
+        if verbose:
+            print('No TDCF input dictionary given, using default values')
+          
+        tmin = 1e-10                                                # First time step after 0
+        tcol = 30e-6                                                 # tmax = tcol + tdelay  = final time step
+        Vpres = [0.99]#[-0.5,0,0.2,0.4,0.6,0.7,0.8,0.85,0.9,1]#,0.85]      # Initial applied voltage (steady-state)
+        Vcol = -2.5
+        Gens = [1e21]                                               # Max generation rate for the gaussian laser pulse
+        tpulse = 3e-9                                               # Time at which the pulse occurs, needs to be changed if width_pulse is modified
+        tstep = 1e-9
+        delays = np.geomspace(5e-9,1e-6,num=10) #[6e-9]                                             # Delays for TDCF simulation
+        width_pulse = 6e-9
+        time_exp = True
+        steps = 200
+    else:
+        if 'tmin' in input_dic.keys():
+            tmin = input_dic['tmin']
+        if 'tcol' in input_dic.keys():
+            tcol = input_dic['tcol']
+        if 'Vpres' in input_dic.keys():
+            Vpres = input_dic['Vpres']
+        if 'Vcol' in input_dic.keys():
+            Vcol = input_dic['Vcol']
+        if 'Gens' in input_dic.keys():
+            Gens = input_dic['Gens']
+        if 'tpulse' in input_dic.keys():
+            tpulse = input_dic['tpulse']
+        if 'tstep' in input_dic.keys():
+            tstep = input_dic['tstep']
+        if 'delays' in input_dic.keys():
+            delays = input_dic['delays']
+        if 'width_pulse' in input_dic.keys():
+            width_pulse = input_dic['width_pulse']
+        if 'time_exp' in input_dic.keys():
+            time_exp = input_dic['time_exp']
+        if 'steps' in input_dic.keys():
+            steps = input_dic['steps']
+
+    ## Prepare strings to run
+    # Fixed string
+    if fixed_str is None:
+        if verbose:
+            print('No fixed string given, using default value')
+        fixed_str = ''  # add any fixed string to the simulation command
+
+    # Get thicknesses (needed later)
+    ParFileDic = ReadParameterFile(f"{path2ZimT}/device_parameters.txt") # Read device parameters
+    L = float(ChosePar('L',GetParFromStr(fixed_str),ParFileDic))
+    L_LTL = float(ChosePar('L_LTL',GetParFromStr(fixed_str),ParFileDic))
+    L_RTL = float(ChosePar('L_RTL',GetParFromStr(fixed_str),ParFileDic))
 
     ## Figures control
+    num_fig = 0
     size_fig = (16, 10)
     colors = cm.viridis((np.linspace(0,1,max(len(Vpres),4)+1)) ) # Color range for plotting
     save_fig = True
@@ -142,7 +175,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
                                  
    
     # Initialize 
-    npre,ncol,ntot,str_lst,sys_lst,path_lst,tj_lst,tVG_lst,tVG_Gen_lst,Qext_Qgen = [],[],[],[],[],[],[],[],[],[]
+    npre,ncol,ntot,str_lst,code_name_lst,path_lst,tj_lst,tVG_lst,tVG_Gen_lst,Qext_Qgen = [],[],[],[],[],[],[],[],[],[]
     idx = 0
     start = time()
     
@@ -151,35 +184,36 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
         # Generate tVG files for Dark simulation
         for Vpre in Vpres:
             for tdelay in delays:
-                zimt_tdcf(tmin,tdelay+tcol,Vpre,Vcol,0,tpulse,tstep,tdelay,width_pulse = width_pulse,tVp = 10e-9,time_exp=time_exp,steps=steps,tVG_name=curr_dir+slash+path2ZimT+'tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt'.format(tdelay,Vpre)) 
-                str_lst.append('-FailureMode 2 -tolJ 1e-3 -L '+str(L)+str2run+' -tVG_file tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre,tdelay,Vpre))
-                sys_lst.append(system)
-                path_lst.append(curr_dir+slash+path2ZimT)
+                zimt_tdcf(tmin,tdelay+tcol,Vpre,Vcol,0,tpulse,tstep,tdelay,width_pulse = width_pulse,tVp = 10e-9,time_exp=time_exp,steps=steps,tVG_name=os.path.join(path2ZimT,'tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt'.format(tdelay,Vpre))) 
+                str_lst.append(fixed_str+' -tVG_file tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre,tdelay,Vpre))
+                code_name_lst.append('zimt')
+                path_lst.append(path2ZimT)
                 tVG_lst.append('tVG_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.txt'.format(tdelay,Vpre))
                 tj_lst.append('tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre))
             
             # Run simulation with light pulse
             for Gen in Gens:
                 for tdelay in delays:
-                    str_lst.append('-FailureMode 2 -tolJ 1e-3 -L '+str(L)+str2run+' -tVG_file tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre,Gen,tdelay,Vpre))
-                    zimt_tdcf(tmin,tdelay+tcol,Vpre,Vcol,Gen,tpulse,tstep,tdelay,width_pulse = width_pulse,tVp = 10e-9,time_exp=time_exp,steps=steps,tVG_name=curr_dir+slash+path2ZimT+'tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre))
-                    sys_lst.append(system)
-                    path_lst.append(curr_dir+slash+path2ZimT)
+                    str_lst.append(fixed_str+' -tVG_file tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt -tj_file tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre,Gen,tdelay,Vpre))
+                    zimt_tdcf(tmin,tdelay+tcol,Vpre,Vcol,Gen,tpulse,tstep,tdelay,width_pulse = width_pulse,tVp = 10e-9,time_exp=time_exp,steps=steps,tVG_name=os.path.join(path2ZimT,'tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre)))
+                    code_name_lst.append('zimt')
+                    path_lst.append(path2ZimT)
                     tVG_lst.append('tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre))
                     tVG_Gen_lst.append('tVG_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.txt'.format(Gen,tdelay,Vpre))
                     tj_lst.append('tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre))
-        # print(str_lst)            
+        
         # Run ZimT
-        # str_lst = str_lst[::-1] # reverse list order to start with longest delays
-        p = multiprocessing.Pool(max_jobs)
-        results = parmap.starmap(run_zimt,list(zip(str_lst,sys_lst,path_lst)), pm_pool=p, pm_processes=max_jobs,pm_pbar=True)
-        p.close()
-        p.join()
+        if do_multiprocessing:
+            run_multiprocess_simu(run_code,code_name_lst,path_lst,str_lst,max_jobs)
+        else:
+            for i in range(len(str_lst)):
+                run_code(code_name_lst[i],path_lst[i],str_lst[i],show_term_output=True,verbose=verbose)
+
             
         ## Move output folder to new folder
         if move_ouput_2_folder: # Move outputs to Store_folder
-            Store_output_in_folder(tVG_lst,Store_folder,curr_dir+slash+path2ZimT)
-            Store_output_in_folder(tj_lst,Store_folder,curr_dir+slash+path2ZimT)
+            Store_output_in_folder(tVG_lst,Store_folder,path2ZimT)
+            Store_output_in_folder(tj_lst,Store_folder,path2ZimT)
 
         
     ########################################################
@@ -191,16 +225,16 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
             ax1 = plt.axes()
             ax2 = ax1.twinx()
             for i in tVG_Gen_lst:
-                VG_file = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+i,delim_whitespace=True)
+                VG_file = pd.read_csv(os.path.join(path2ZimT,Store_folder,i),delim_whitespace=True)
                 ax1.semilogx(VG_file['t'],VG_file['Gehp'])
                 ax2.semilogx(VG_file['t'],VG_file['Vext'],'--')
     for Vpre in Vpres:
         for tdelay in delays:
-            data_tjdark = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre),delim_whitespace=True)
+            data_tjdark = pd.read_csv(os.path.join(path2ZimT,Store_folder,'tj_TDCF_dark_delay_{:.1e}_Vpre_{:.2f}.dat'.format(tdelay,Vpre)),delim_whitespace=True)
             tswith = tdelay + tpulse
             npre_dumb,ncol_dumb,ntot_dumb = [],[],[]
             for Gen in Gens:
-                data_tj = pd.read_csv(curr_dir+slash+path2ZimT+Store_folder+'tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre),delim_whitespace=True)
+                data_tj = pd.read_csv(os.path.join(path2ZimT,Store_folder,'tj_TDCF_Gen_{:.1e}_delay{:.1e}_Vpre_{:.2f}.dat'.format(Gen,tdelay,Vpre)),delim_whitespace=True)
 
                 # Interpolate Jdark in case some time step did not converge
                 tck = interpolate.splrep(data_tjdark['t'], data_tjdark['Jext'], s=0)
@@ -220,7 +254,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
                 # Make plot
                 if plot_PhotoCurr_TDCF:
                     label = 'Gen {:.1e} delay {:.1e}'.format(Gen,tdelay)
-                    zimt_tj_plot(num_fig_PhotoCurr,data_tj,y=['Jtdcf'],xlimits= [0,max(data_tj['t'])],colors=colors[idx],plot_type=1,save_yes=save_fig,legend=False,pic_save_name = curr_dir+slash+path2ZimT+Store_folder+'transient.jpg')
+                    zimt_tj_plot(num_fig_PhotoCurr,data_tj,y=['Jtdcf'],xlimits= [0,max(data_tj['t'])],colors=colors[idx],plot_type=1,save_yes=save_fig,legend=False,pic_save_name = os.path.join(path2ZimT,Store_folder,'transient.jpg'))
 
                 if plot_extract_charges:
                     plt.figure(num_fig_extract_charges)
@@ -289,11 +323,11 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
             if plot_Diff_Dens:    
                 plt.figure(num_fig_Diff_Dens)
                 plt.loglog(ncol[1::],abs(dndt),'o',label='')
-                plt.loglog(np.geomspace(1e18,1e23,num=10), abs(TDCF_fit(np.geomspace(1e18,1e23,num=10), 1.5e-16,6e21)), 'g--',label='fit: k$_2$='+sci_notation(1.5e-16,sig_fig=1)+' m$^3$ s$^{-1}$, n$_{BG}$='+sci_notation(6e21,sig_fig=1)+'m$^{-3}$')
+                plt.loglog(np.geomspace(1e18,1e23,num=10), abs(TDCF_fit(np.geomspace(1e18,1e23,num=10), 1e-17,2e22)), 'g--',label='fit: k$_2$='+sci_notation(1e-17,sig_fig=1)+' m$^3$ s$^{-1}$, n$_{BG}$='+sci_notation(6e21,sig_fig=1)+'m$^{-3}$')
                 # print(abs(TDCF_fit(np.geomspace(ncol.min(),ncol.max(),num=10), 1e-17,2e22)))
                 # Make fit
                 if make_fit ==True:
-                    popt, pcov = curve_fit(TDCF_fit, np.asarray(ncol[1:]), np.asarray(abs(dndt)),p0=[3e-18,2e22])
+                    popt, pcov = curve_fit(TDCF_fit, np.asarray(ncol[1:]), np.asarray(abs(dndt)),p0=[1e-18,1e22])
                     plt.loglog(ncol[1:], abs(TDCF_fit(np.asarray(ncol[1:]), *popt)), 'b--')#,label='fit: a=%5.3f, b=%5.3f' % tuple(popt))
 
                 
@@ -326,7 +360,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
         plt.ylabel(r'n$_{ext}$ [m$^{-3}$]')
         plt.tight_layout()
         if save_fig:
-            plt.savefig(curr_dir+slash+path2ZimT+Store_folder+'chargevstime.jpg',dpi=300,transparent=True)  
+            plt.savefig(os.path.join(path2ZimT,Store_folder,'chargevstime.jpg'),dpi=100,transparent=True)  
 
     # plot extracted over generated charges ratio                    
     if plot_extract_charges and plot_extract_charges_vs_V:
@@ -338,7 +372,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
         plt.ylabel('Q$_{ext}$/Q$_{gen}$')
         plt.tight_layout()
         if save_fig:
-            plt.savefig(curr_dir+slash+path2ZimT+Store_folder+'chargevsvoltage.jpg',dpi=300,transparent=True) 
+            plt.savefig(os.path.join(path2ZimT,Store_folder,'chargevsvoltage.jpg'),dpi=100,transparent=True) 
 
 
     
@@ -351,7 +385,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
         plt.ylabel('Normalized Carrier Density')
         plt.tight_layout()
         if save_fig:
-            plt.savefig(curr_dir+slash+path2ZimT+Store_folder+'norm_charges.jpg',dpi=300,transparent=True)
+            plt.savefig(os.path.join(path2ZimT,Store_folder,'norm_charges.jpg'),dpi=310,transparent=True)
     
     # plot differential density (dntot/dt)                                     
     if plot_Diff_Dens:
@@ -362,14 +396,14 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
         plt.ylabel(r'$\| \frac{dn}{dt}\|$ [m$^{-3}$ s$^{-1}$]')
         plt.tight_layout()
         if save_fig:
-            plt.savefig(curr_dir+slash+path2ZimT+Store_folder+'dndt.jpg',dpi=300,transparent=True)
+            plt.savefig(os.path.join(path2ZimT,Store_folder,'dndt.jpg'),dpi=100,transparent=True)
 
 
     ## Clean-up outputs from folder
     if clean_output: # delete all outputs
-        clean_up_output('tj',curr_dir+slash+path2ZimT+Store_folder)
-        clean_up_output('tVG',curr_dir+slash+path2ZimT+Store_folder)
-        print('Ouput data was deleted from '+curr_dir+slash+path2ZimT+Store_folder)
+        clean_up_output('tj',os.path.join(path2ZimT,Store_folder))
+        clean_up_output('tVG',os.path.join(path2ZimT,Store_folder))
+        print('Ouput data was deleted from '+os.path.join(path2ZimT,Store_folder))
     
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds    
     return Vpres,Qext_Qgen,num_fig
@@ -378,7 +412,7 @@ def TDCF(L,L_LTL=0,L_RTL=0,num_fig=0,str2run='',path2ZimT='',Store_folder=''):
 
 if __name__ == '__main__':
     
-    TDCF(L=140e-9,L_LTL=20e-9,L_RTL=20e-9,num_fig=0,path2ZimT = 'Simulation_program/DDSuite_v403_OPV/ZimT',Store_folder='TDCF')
+    TDCF()
 
     plt.show()
     
