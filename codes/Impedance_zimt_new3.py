@@ -25,7 +25,7 @@ from VLC_units.cleanup_folder.clean_folder import *
 from VLC_units.useful_functions.aux_func import *
 from VLC_units.impedance.impedance_func import *
 ## Main Program
-def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False, plot_tjs = False, plot_Nyquist = True, plot_Bode = True, calc_capacitance = True, nFcm2 =True, move_ouput_2_folder = True, Store_folder = 'Impedance',clean_output = False,verbose = True):  
+def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, plot_tjs = False, plot_Nyquist = True, plot_Bode = True, calc_capacitance = True, nFcm2 =True, get_capa_fit = True, move_ouput_2_folder = True, Store_folder = 'Impedance',clean_output = False,verbose = True):  
     """Run TPC simulation using ZimT
 
     Parameters
@@ -48,6 +48,8 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
         Calculate capacitance?, by default True
     nFcm2 : bool, optional
         Convert capacitance to nF/cm2, by default True
+    get_capa_fit : bool, optional
+        If True calculate capacitance by fitting sin wave to the signal,  else use fft, by default False
     move_ouput_2_folder : bool, optional
         Move output to folder?, by default True
     Store_folder : str, optional
@@ -83,11 +85,11 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
 
     ## Simulation input
     if input_dic is None:
-        freqs1 = np.geomspace(1e2,1e4,num=7,endpoint=False)
-        freqs2 = np.geomspace(1e4,1e9,num=7,endpoint=True)
+        freqs1 = np.geomspace(1e0,1e4,num=20,endpoint=False)
+        freqs2 = np.geomspace(1e4,5e8,num=20,endpoint=True)
         freqs = np.append(freqs1, freqs2)                      # frequencies to simulate (Hz)
-        Vapps = [-0.5,0.5]#[-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
-        Vamp = 0.01                       # Amplitude voltage perturbation
+        Vapps = [0]#[-.5, .5]  #[-1, 0, 0.5]  # [-2, -1, 0, 0.2, 0.4, 0.6, 0.8]         # Applied voltage (V)
+        Vamp = 0.02                       # Amplitude voltage perturbation
         Gen = 1e27                        # Average generation rate 
     else:
         freqs = input_dic['freqs']
@@ -102,7 +104,7 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
     if fixed_str is None:
         if verbose:
             print('No fixed string given, using default value')
-        fixed_str = ''  # add any fixed string to the simulation command
+        fixed_str = ' -accDens 0.04'  # add any fixed string to the simulation command
     ParFileDic = ReadParameterFile(f"{path2ZimT}/device_parameters.txt") # Read device parameters
 
     # Calculate geometric capacitance
@@ -182,25 +184,26 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
             Jm[idx].append(data_tj2['Jext'])  # save preprocessed data for comparison
             tm[idx].append(data_tj2['t'])
 
+            if get_capa_fit:
             ## OLD way of calculating Z
-            # comp = get_complex_impedance(data_tj2,freq)
-            ## save
-            # Zs[idx].append(comp)
-            # ReZ[idx].append(comp.real)
-            # ImZ[idx].append(comp.imag)
-            # Zmag[idx].append(abs(comp))
-            # phase[idx].append(cmath.phase(comp))
-            # Cap[idx].append((1/comp).imag/(2*np.pi*freq))
+                comp = get_complex_impedance(data_tj2,freq)
+                # save
+                Zs[idx].append(comp)
+                ReZ[idx].append(comp.real)
+                ImZ[idx].append(comp.imag)
+                Zmag[idx].append(abs(comp))
+                phase[idx].append(cmath.phase(comp))
+                Cap[idx].append((1/comp).imag/(2*np.pi*freq))
 
-
+            else:
             ## New way of calculating Z 
-            comp,C = calcZC(data_tj2['Vext'].to_numpy(),data_tj2['Jext'].to_numpy(),freq,'RCp') 
-            Zs[idx].append(comp)
-            ReZ[idx].append(comp.real)
-            ImZ[idx].append(comp.imag)
-            Zmag[idx].append(abs(comp))
-            phase[idx].append(cmath.phase(comp))
-            Cap[idx].append(C)
+                comp,C = calcZC(data_tj2['Vext'].to_numpy(),data_tj2['Jext'].to_numpy(),freq,'RCp') 
+                Zs[idx].append(comp)
+                ReZ[idx].append(comp.real)
+                ImZ[idx].append(comp.imag)
+                Zmag[idx].append(abs(comp))
+                phase[idx].append(cmath.phase(comp))
+                Cap[idx].append(C)
 
 
         ## save f and Z in file for later use of impedance.py
@@ -426,8 +429,8 @@ def Impedance(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = F
             ax5.set_ylabel('Capacitance  C  [F]')
             if nFcm2:
                 ax5.set_ylabel(r'Capacitance  C  [nF/cm$^2$]')
-                ax5.set_ylim(-5, 83)
-                ax5.set_xlim(1e2, 1e9)
+                ax5.set_ylim(-5, 60)
+                ax5.set_xlim(1e0, 1e9)
             else:
                 ax5.set_yscale('log')
             for idx in range(len(Vapps)):
