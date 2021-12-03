@@ -1,6 +1,6 @@
-###################################################
-########## Make plots for SIMsalabim ###############
-###################################################
+#########################################################
+########## Run and plot SIMsalabim output ###############
+#########################################################
 # by Vincent M. Le Corre
 # Package import
 import os,platform,warnings,itertools
@@ -16,8 +16,37 @@ from VLC_units.simu.get_input_par import *
 
 
 
-def run_plot_SIMsalabim():
+def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = None, run_simu = True, plot_JVs = True, plot_nrj_diag = True, plot_densities = True, plot_exp = False, JVexp_lst = None,  verbose = True):
+    """Run and plot SIMsalabim outputs.
 
+    Parameters
+    ----------
+    fixed_str : str, optional
+        Add any fixed string to the simulation command for zimt, by default None.
+    parameters : dict, optional
+        Dictionary with the input for the SIMsalabim function, we will simulate all permutations, by default None.
+    path2SIMsalabim : str, optional
+        Path to Simss, by default None
+    run_simu : bool, optional
+        Rerun simu?, by default True
+    plot_JVs : bool, optional
+        Make JV plot?, by default True
+    plot_nrj_diag : bool, optional
+        Make energy diagram plot, by default True
+    plot_densities : bool, optional
+        Make density plot, by default True
+    plot_exp : bool, optional
+        Add experimental data to JV plot, by default False
+    JVexp_lst : list, optional
+        List of experimental JV data filenames in the path2SIMsalabim directory, by default None
+    verbose : bool, optional
+        Verbose?, by default True
+    
+    Returns
+    -------
+    JV_files,Var_files,scPars_files : list,list
+        Lists of JV and variable and performance filenames
+    """
     ## General Inputs
     warnings.filterwarnings("ignore")           # Don't show warnings
     system = platform.system()                  # Operating system
@@ -32,23 +61,44 @@ def run_plot_SIMsalabim():
                 pass
 
 
-    path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v425/SimSS')                    # Path to SimSS
-    run_simu = True                                                                                             # Rerun simulation
+    curr_dir = os.getcwd()              # Current working directory
+    if path2SIMsalabim  is None:
+        path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v425/SimSS')                    # Path to SimSS
+                                                                                            # Rerun simulation
+
+    ## Prepare strings to run
+    # Fixed string
+    if fixed_str is None:
+        if verbose:
+            print('No fixed string given, using default value')
+        fixed_str = ''  # add any fixed string to the simulation command
+
+    # Parameters to vary
+    if parameters is None:
+        parameters = []
+        parameters.append({'name':'Gfrac','values':[0,1]})
+
+    ParFileDic = ReadParameterFile(f"{path2SIMsalabim}/device_parameters.txt") # Read device parameters
+
+    # Initialize     
+    str_lst,labels,JV_files,Var_files,scPars_files,code_name_lst,path_lst,val,nam = [],[],[],[],[],[],[],[],[]
+    if JVexp_lst is None:
+        JVexp_lst = []
+        add_exp = False
+        # JVexp_lst= ['PM6_3918_dark.txt','PM6_3918_int3.txt','PM6_3918_int10.txt','PM6_3918_int33.txt','PM6_3918_int100.txt','PM6_3918_int330.txt','PM6_3918_am15_long.txt','PM6_3918_int800.txt']
+    else:
+        add_exp = True
 
     ## Figures control
     ext_save_pic = '.jpg'
     size_fig = (10, 8)
     num_fig = 0
     # JV_file plots
-    plot_JVs = True # Make JV plot
-    plot_exp = False # Add experimental data to JV plot
     if plot_JVs:
         num_fig += 1
         num_JV_plot = num_fig
         f_JVs = plt.figure(num_JV_plot,figsize=size_fig)
     # Var_file plots
-    plot_nrj_diag = True # Make energy diagram plot
-    plot_densities = True # Make density plot
     if plot_nrj_diag:
         num_fig += 1
         num_nrj_diag_plot = num_fig
@@ -58,26 +108,7 @@ def run_plot_SIMsalabim():
             num_fig += 1
             num_dens_plot = num_fig
             f_nrj_diag = plt.figure(num_dens_plot,figsize=size_fig)
-
-
-    ## Prepare strings to run
-    # Fixed string
-    fixed_str = ''
-
-
-    # Parameters to vary
-    parameters = []
-    parameters.append({'name':'L','values':[140e-9]})
-    parameters.append({'name':'L_LTL','values':[30e-9]})
-    parameters.append({'name':'L_RTL','values':[10e-9]})
-    parameters.append({'name':'W_L','values':[4.1,4.2]})
-
-    ParFileDic = ReadParameterFile(f"{path2SIMsalabim}/device_parameters.txt") # Read device parameters
-
     
-    str_lst,labels,JVexp_lst,JV_files,Var_files,code_name_lst,path_lst,val,nam = [],[],[],[],[],[],[],[],[]
-    # JVexp_lst= ['PM6_3918_dark.txt','PM6_3918_int3.txt','PM6_3918_int10.txt','PM6_3918_int33.txt','PM6_3918_int100.txt','PM6_3918_int330.txt','PM6_3918_am15_long.txt','PM6_3918_int800.txt']
-
     for param in parameters: # initalize lists of values and names
         val.append(param['values'])
         nam.append(param['name'])
@@ -89,21 +120,25 @@ def run_plot_SIMsalabim():
         lab = ''
         JV_name = 'JV'
         Var_name = 'Var'
+        scPars_name = 'scPars'
         for j,name in zip(i,nam):
             str_line = str_line +'-'+name+' {:.2e} '.format(j)
             lab = lab+name+' {:.2e} '.format(j)
             JV_name = JV_name +'_'+name +'_{:.2e}'.format(j)
             Var_name = Var_name +'_'+ name +'_{:.2e}'.format(j)
-        str_lst.append(fixed_str+ ' ' +str_line+ '-JV_file '+JV_name+ '.dat -Var_file '+Var_name+'.dat')# -ExpJV '+JVexp_lst[idx])
+            scPars_name = scPars_name +'_'+ name +'_{:.2e}'.format(j)
+        str_lst.append(fixed_str+ ' ' +str_line+ '-JV_file '+JV_name+ '.dat -Var_file '+Var_name+'.dat -scPars_file '+scPars_name+'.dat')# -ExpJV '+JVexp_lst[idx])
         JV_files.append(os.path.join(path2SIMsalabim , str(JV_name+ '.dat')))
         Var_files.append(os.path.join(path2SIMsalabim , str(Var_name+ '.dat')))
+        scPars_files.append(os.path.join(path2SIMsalabim , str(scPars_name+ '.dat')))
         labels.append(lab)
-        JVexp_lst.append('')
+        if not add_exp:
+            JVexp_lst.append('')
         code_name_lst.append('SimSS')
         path_lst.append(path2SIMsalabim)
         idx += 1
-    # print(str_lst)
 
+    # print(str_lst)
     colors = plt.cm.viridis(np.linspace(0,1,max(len(str_lst),4)+1)) # prepare color for plots
 
     # Run simulation
@@ -118,14 +153,14 @@ def run_plot_SIMsalabim():
 
     idx = 0
     perf_exp,perf_simu = [],[]
-    for Simu_str,exp_name,lbl,JV_file_name,Var_file_name in zip(str_lst,JVexp_lst,labels,JV_files,Var_files):
+    for Simu_str,exp_name,lbl,JV_file_name,Var_file_name,scPars_file_name in zip(str_lst,JVexp_lst,labels,JV_files,Var_files,scPars_files):
 
         ## Plot JVs
         if plot_JVs:
             # print(JV_file_name)
             data_JV = make_df_JV(JV_file_name) # Load JV_file
             if plot_exp: # Load Exp JV
-                data_JVexp = pd.read_csv(path2SIMsalabim  / exp_name,delim_whitespace=True)
+                data_JVexp = pd.read_csv(os.path.join(path2SIMsalabim, exp_name),delim_whitespace=True)
             else:
                 data_JVexp = pd.DataFrame()
 
@@ -139,8 +174,8 @@ def run_plot_SIMsalabim():
 
         # Energy diagram plot
         if plot_nrj_diag:
-            L_LTL = ChosePar('L_LTL',GetParFromStr(Simu_str),ParFileDic) # Needed for nrj_diag plot
-            L_RTL = ChosePar('L_RTL',GetParFromStr(Simu_str),ParFileDic) # Needed for nrj_diag plot
+            L_LTL = float(ChosePar('L_LTL',GetParFromStr(Simu_str),ParFileDic)) # Needed for nrj_diag plot
+            L_RTL =  float(ChosePar('L_RTL',GetParFromStr(Simu_str),ParFileDic)) # Needed for nrj_diag plot
             SIMsalabim_nrj_diag(num_nrj_diag_plot ,data_var,L_LTL,L_RTL,legend=False,Background_color=True,no_axis=False,pic_save_name=os.path.join(path2SIMsalabim,'Energy_diagram'+ext_save_pic))
 
         # Carrier density plot
@@ -163,10 +198,10 @@ def run_plot_SIMsalabim():
             plt.gca().add_artist(first_legend) # Add the legend manually to the current Axes.
             #list(np.linspace(np.min(data_var['Vext']),np.max(data_var['Vext']),5))
             # SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=list(np.linspace(np.min(data_var['Vext']),np.max(data_var['Vext']),5)),y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=colorbar_display)
-            SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=[np.max(data_var['Vext'])],y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=False)
-            
-            
+            SIMsalabim_dens_plot(num_dens_plot,data_var,Vext=[np.max(data_var['Vext'])],y=dens2plot,line_type=line_type,plot_type=2,colors=colors[idx],labels=labels[idx],legend=False,colorbar_type = colorbar,colorbar_display=False)    
         idx += 1
+    
+    return JV_files,Var_files,scPars_files
   
 
 

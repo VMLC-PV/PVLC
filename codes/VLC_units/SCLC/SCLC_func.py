@@ -3,16 +3,12 @@
 ###################################################
 # by Vincent M. Le Corre
 # Package import
+import subprocess,shutil,os,glob,sys,warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import plot_settings_screen
 from scipy import stats,optimize,constants
-import subprocess,shutil,os,glob
-from itertools import repeat
 from lmfit import Model
-import warnings
-import sys
 # Don't show warnings
 warnings.filterwarnings("ignore")
 ## Physics constants
