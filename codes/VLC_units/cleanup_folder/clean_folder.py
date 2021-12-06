@@ -14,7 +14,7 @@ def clean_up_output(filename_start,path):
         path to the directory where we clean the output
     """ 
     for fname in os.listdir(path):
-        if fname.startswith(filename_start):
+        if fname.startswith(filename_start) and not os.path.isdir(os.path.join(path,fname)):
             os.remove(os.path.join(path,fname))
 
 def Store_output_in_folder(filenames,folder_name,path):

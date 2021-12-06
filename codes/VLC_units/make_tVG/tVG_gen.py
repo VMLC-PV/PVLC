@@ -103,7 +103,7 @@ def zimt_voltage_step(tmin,tmax,Vstart,Vfinal,Gen,steps=100,trf = 10e-9,time_exp
     if time_exp == True:
         t = np.geomspace(tmin,tmax,num=steps)
     else :
-        t = np.linspace(0,tmax,int(steps),endpoint=True)
+        t = np.linspace(tmin,tmax,int(steps),endpoint=True)
 
     t=np.insert(t,0,0)
     V,G = [],[]

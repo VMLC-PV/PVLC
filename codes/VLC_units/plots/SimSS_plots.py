@@ -8,10 +8,7 @@ import pandas as pd
 import matplotlib as mp
 import matplotlib.pyplot as plt
 from matplotlib.legend import Legend
-import plot_settings_screen
 from scipy import stats,optimize,constants
-# import subprocess,shutil,os,glob,tqdm,parmap,multiprocessing,random,sys
-# from itertools import repeat
 import warnings
 import sys
 # Don't show warnings

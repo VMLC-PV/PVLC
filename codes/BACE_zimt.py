@@ -1,3 +1,6 @@
+###################################################
+########## Simulate BACE using ZimT ###############
+###################################################
 # by Vincent M. Le Corre
 # Package import
 import os,sys,platform,warnings
@@ -138,11 +141,11 @@ def BACE(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False,
             
 
         # Run ZimT
-            if do_multiprocessing:
-                run_multiprocess_simu(run_code,code_name_lst,path_lst,str_lst,max_jobs)
-            else:
-                for i in range(len(str_lst)):
-                    run_code(code_name_lst[i],path_lst[i],str_lst[i],show_term_output=True,verbose=verbose)
+        if do_multiprocessing:
+            run_multiprocess_simu(run_code,code_name_lst,path_lst,str_lst,max_jobs)
+        else:
+            for i in range(len(str_lst)):
+                run_code(code_name_lst[i],path_lst[i],str_lst[i],show_term_output=True,verbose=verbose)
             
         print('Calculation time {:.2f} s'.format(time() - start)) # Time in seconds
 
