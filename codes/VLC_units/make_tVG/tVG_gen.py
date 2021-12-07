@@ -31,7 +31,7 @@ def gaussian_pulse(t, tpulse, width, Imax):
     return Imax *np.exp(-np.power(t - tpulse, 2.) / (2 * np.power(width, 2.)))
 
 
-def zimt_light_decay(tmin,tmax,Gstart,Gfinal,Va,tstep,trf = 20e-9,time_exp =False,tVG_name='tVG.txt'):
+def zimt_light_decay(tmin,tmax,Gstart,Gfinal,Va,steps=100,trf = 20e-9,time_exp =False,tVG_name='tVG.txt'):
     """Make tVG file for light decay experiment
 
     Parameters
@@ -46,8 +46,8 @@ def zimt_light_decay(tmin,tmax,Gstart,Gfinal,Va,tstep,trf = 20e-9,time_exp =Fals
         final generation rate (unit: m^-3 s^-1)
     Va : float
         applied voltage (unit: V)
-    tstep : float
-        time step if lin or number of point if time_exp = True (unit: s)
+    steps : float
+        number of time steps
     trf : float, optional
         LED/laser fall/rise time, by default 20e-9 (unit: s)
     time_exp : bool, optional
@@ -58,9 +58,9 @@ def zimt_light_decay(tmin,tmax,Gstart,Gfinal,Va,tstep,trf = 20e-9,time_exp =Fals
 
     # Chose between exponential or linear time step
     if time_exp == True:
-        t = np.geomspace(tmin,tmax,tstep)
+        t = np.geomspace(tmin,tmax,steps)
     else :
-        t = np.arange(tmin,tmax,tstep)
+        t = np.linspace(tmin,tmax,steps)
 
     t=np.insert(t,0,0)
     V,G = [],[]

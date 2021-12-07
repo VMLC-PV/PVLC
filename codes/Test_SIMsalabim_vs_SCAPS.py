@@ -14,8 +14,13 @@ from scipy import constants
 from pathlib import Path
 from scipy import stats
 # Package by VLC
-import plot_settings_screen
-from VLC_useful_func import *
+# import plot_settings_screen
+# from VLC_useful_func import *
+# Import homemade package by VLC
+from VLC_units.plots.SimSS_plots import *
+from VLC_units.simu.runsim import *
+from VLC_units.simu.get_input_par import *
+import VLC_units.plots.plot_settings_screen
 
 # Don't show warnings
 warnings.filterwarnings("ignore")
@@ -64,19 +69,18 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
     np_plot_filename : str
         filename for the saved image of the carrier density comparison figure
     """    
-    # General Inputs
+    ## General Inputs
+    warnings.filterwarnings("ignore")           # Don't show warnings
     system = platform.system()                  # Operating system
-    # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
-    max_jobs = os.cpu_count()-2
-    if system == 'Windows':             # cannot easily do multiprocessing in Windows
-        max_jobs = 1
-        slash = '/'
-        try:
-            os.system('taskkill.exe /F /IM SIMsalabim.exe')
-        except:
-            pass
-    else:
-        slash = '/'
+    max_jobs = os.cpu_count()-2                 # Max number of parallel simulations (for number of CPU use: os.cpu_count() )
+    do_multiprocessing = True                      # Use multiprocessing
+    if system == 'Windows':                     # cannot easily do multiprocessing in Windows
+            max_jobs = 1
+            do_multiprocessing = False
+            try:                                # kill all running jobs to avoid conflicts
+                os.system('taskkill.exe /F /IM simss.exe')
+            except:
+                pass
 
     # Simulation input
     run_simu = True                                         # Rerun simu?
@@ -87,10 +91,10 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
     idx = 0
     start = time()
     lines = ['-', '--', '-.', ':']
-    sys_lst, path_lst = [], []
+    code_name_lst, path_lst = [], []
     for i in str_lst:
-        sys_lst.append(system)
-        path_lst.append(curr_dir+slash+path2SIMsalabim)
+        code_name_lst.append('SimSS')
+        path_lst.append(path2SIMsalabim)
         
     # Figures control
     size_fig = (16, 12)
@@ -102,29 +106,30 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
     # Color range for plotting
     colors = plt.cm.viridis(np.linspace(0, 1, max(len(str_lst), 4) + 1))
 
-    # Run SIMsalabim
+    # Run simulation
     if run_simu:
-        p = multiprocessing.Pool(max_jobs)
-        results = parmap.starmap(run_SIMsalabim, list(
-            zip(str_lst, sys_lst, path_lst)), pm_pool=p, pm_processes=max_jobs, pm_pbar=True)
-        p.close()
-        p.join()
+        if do_multiprocessing:
+            run_multiprocess_simu(run_code,code_name_lst,path_lst,str_lst,max_jobs)
+        else:
+            for i in range(len(str_lst)):
+                run_code(code_name_lst[i],path_lst[i],str_lst[i],show_term_output=True)
+
     ## Move output folder to new folder
     # Create directory if it does not exist
     if not os.path.exists(Store_Folder):
         os.makedirs(Store_Folder)
     # move file into the new folder
     for i in JV_files:
-        if os.path.exists(os.path.join(curr_dir,path2SIMsalabim,i)):
-            os.replace(os.path.join(curr_dir,path2SIMsalabim,i),Store_Folder/i)
+        if os.path.exists(os.path.join(path2SIMsalabim,i)):
+            os.replace(os.path.join(path2SIMsalabim,i),os.path.join(Store_Folder,i))
     for i in Var_files:
-        if os.path.exists(os.path.join(curr_dir,path2SIMsalabim,i)):
-            os.replace(os.path.join(curr_dir,path2SIMsalabim,i),Store_Folder/i)
+        if os.path.exists(os.path.join(path2SIMsalabim,i)):
+            os.replace(os.path.join(path2SIMsalabim,i),os.path.join(Store_Folder,i))
     # Start file import and plotting
     for Simu_str, exp_name, lbl, JV_file_name, Var_file_name, npexp_name in zip(str_lst, JVscaps_lst, labels, JV_files, Var_files, NPexp_lst):
 
         # Import files
-        data_JV = make_df_JV(Path(Store_Folder / JV_file_name))
+        data_JV = make_df_JV(os.path.join(Store_Folder ,JV_file_name))
         if has_TL:
             names_scaps = ['v(V)', 'jtot(mA/cm2)', 'j_total_rec(mA/cm2)', 'j_total_gen(mA/cm2)', '   jbulk(mA/cm2)', 'jifr(mA/cm2)',
                            'jminor_left(mA/cm2)', 'jminor_right(mA/cm2)', 'j_SRH(mA/cm2)', 'j_Radiative(mA/cm2)', 'j_Auger(mA/cm2)']
@@ -144,7 +149,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
             data_densscaps = pd.read_csv(npexp_name, names=names_densscaps, engine="python",
                                          header=None, delim_whitespace=True, usecols=[1, 7, 8], skiprows=34, skipfooter=10)
 
-        data_var = make_df_Var(Path(Store_Folder / Var_file_name))
+        data_var = make_df_Var(os.path.join(Store_Folder , Var_file_name))
         # data_var['x'] = data_var['x'] * 1e9
 
         ########################################################
@@ -153,7 +158,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
         plt.plot(data_JVscaps['v(V)'], data_JVscaps['jtot(mA/cm2)'], 'o',
                 markeredgecolor=colors[idx], markersize=10, markerfacecolor='None', markeredgewidth=3)
         SIMsalabim_JVs_plot(0, data_JV, x='Vext', y=['Jext'], xlimits=[], ylimits=[
-        ], plot_type=0, labels=lbl, colors=colors[idx], legend=True, save_yes=True, pic_save_name=Store_Folder / JV_plot_filename)
+        ], plot_type=0, labels=lbl, colors=colors[idx], legend=True, save_yes=True, pic_save_name=os.path.join(Store_Folder ,  JV_plot_filename))
         plt.legend(prop={"size": 20})
 
         ## Compare SIMsalabim and scaps electron and hole densities at Voc
@@ -167,7 +172,7 @@ def SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files
         plt.legend(handles=dens_patches, loc='best',
                     frameon=False, fontsize=30)
         SIMsalabim_dens_plot(1, data_var,y=['n', 'p'], xlimits=[], ylimits=[], plot_type=2, labels=lbl, colors=colors[idx],
-                                line_type=lines, legend=False, save_yes=True, pic_save_name=Store_Folder / np_plot_filename)
+                                line_type=lines, legend=False, save_yes=True, pic_save_name=os.path.join(Store_Folder , np_plot_filename))
         plt.legend(prop={"size": 15}, ncol=3, )
         plt.ylim(1e8, 1e19)
 
@@ -181,9 +186,14 @@ if __name__ == '__main__':
     # Inputs
     slash = '/'
     curr_dir = os.getcwd()                      # Current working directory
-    path2SIMsalabim = 'Simulation_program/DDSuite_v409/SIMsalabim'+slash    # Path to SIMsalabim in curr_dir
+    path2SIMsalabim = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v425/SimSS')    # Path to SIMsalabim in curr_dir
     ext_save_pic = '.jpg'
     
+    # copy and save current device_parameters.txt file so it does not get lost and replace it with the one needed for the test
+    os.rename(os.path.join(path2SIMsalabim,'device_parameters.txt'), os.path.join(path2SIMsalabim,'device_parameters_saved.txt'))
+    shutil.copyfile(os.path.join(os.getcwd(),'Test simulation','device_parameters_SIMsalabim_vs_scaps.txt'), os.path.join(path2SIMsalabim,'device_parameters.txt'))
+
+
     # Simulation types
     MIM_configuration = False
     Pin_nip_configuration = False
@@ -194,8 +204,8 @@ if __name__ == '__main__':
     if MIM_configuration:
         print('\n')
         print('Start the MIM configuration comparison:')
-        path_scaps = Path(curr_dir+slash+'Test simulation/MIM Configuration')
-        Store_Folder = Path(curr_dir+slash+'Test simulation/MIM Configuration')
+        path_scaps = Path(os.path.join(curr_dir,'Test simulation/MIM Configuration'))
+        Store_Folder = Path(os.path.join(curr_dir,'Test simulation/MIM Configuration'))
         str_lst = ['-Nc 5e24 -L 300e-9 -JV_file JV_MIM_ref.dat -Var_file Var_MIM_ref.dat',
                    '-Nc 5e24 -kdirect 1e-17 -JV_file JV_MIM_1.dat -Var_file Var_MIM_1.dat',
                    '-Nc 5e24 -mun_0 1e-7 -mup_0 1e-7 -JV_file JV_MIM_2.dat -Var_file Var_MIM_2.dat',
@@ -207,10 +217,10 @@ if __name__ == '__main__':
                   'Test number 6']
         JV_files = ['JV_MIM_ref.dat', 'JV_MIM_1.dat','JV_MIM_2.dat','JV_MIM_3.dat','JV_MIM_4.dat','JV_MIM_5.dat','JV_MIM_6.dat']
         Var_files = ['Var_MIM_ref.dat', 'Var_MIM_1.dat','Var_MIM_2.dat','Var_MIM_3.dat','Var_MIM_4.dat','Var_MIM_5.dat','Var_MIM_6.dat']
-        JVscaps_lst = [path_scaps / 'testref.iv', path_scaps / 'test1.iv', path_scaps / 'test2.iv', path_scaps / 'test3.iv',
-                     path_scaps / 'test4.iv', path_scaps / 'test5.iv', path_scaps / 'test6.iv']
-        NPexp_lst = [path_scaps / 'nptestref.eb', path_scaps / 'nptest1.eb', path_scaps / 'nptest2.eb', path_scaps / 'nptest3.eb',
-                     path_scaps / 'nptest4.eb', path_scaps / 'nptest5.eb', path_scaps / 'nptest6.eb']
+        JVscaps_lst = [os.path.join(path_scaps, 'testref.iv'), os.path.join(path_scaps, 'test1.iv'), os.path.join(path_scaps, 'test2.iv'), os.path.join(path_scaps, 'test3.iv'),
+                     os.path.join(path_scaps, 'test4.iv'), os.path.join(path_scaps, 'test5.iv'), os.path.join(path_scaps, 'test6.iv')]
+        NPexp_lst = [os.path.join(path_scaps, 'nptestref.eb'), os.path.join(path_scaps, 'nptest1.eb'), os.path.join(path_scaps, 'nptest2.eb'), os.path.join(path_scaps, 'nptest3.eb'),
+                     os.path.join(path_scaps, 'nptest4.eb'), os.path.join(path_scaps, 'nptest5.eb'), os.path.join(path_scaps, 'nptest6.eb')]
         JV_plot_filename = 'JV_MIM_configuration_SIMsalabim'+ext_save_pic 
         np_plot_filename = 'np_MIM_configuration_SIMsalabim'+ext_save_pic 
         has_TL = False
@@ -221,8 +231,8 @@ if __name__ == '__main__':
     if Pin_nip_configuration:
         print('\n')
         print('Start the pin-nip configuration comparison:')
-        path_scaps = Path(curr_dir + slash + 'Test simulation/Pin-nip Configuration')
-        Store_Folder = Path(curr_dir + slash + 'Test simulation/Pin-nip Configuration')
+        path_scaps = os.path.join(curr_dir, 'Test simulation/Pin-nip Configuration')
+        Store_Folder = os.path.join(curr_dir, 'Test simulation/Pin-nip Configuration')
         str_lst = ['-Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_TL_ref.dat -Var_file Var_TL_ref.dat',
                    '-Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -mob_LTL 1e-7 -mob_RTL 1e-7 -JV_file JV_TL_1.dat -Var_file Var_TL_1.dat',
                    '-Nc 1e24 -Gehp 4.2e27 -L 400e-9 -L_LTL 50e-9 -L_RTL 50e-9 -mob_LTL 1e-7 -mob_RTL 1e-7 -JV_file JV_TL_2.dat -Var_file Var_TL_2.dat',
@@ -233,10 +243,10 @@ if __name__ == '__main__':
                   'Test number 3', 'Test number 4', 'Test number 5']
         JV_files = ['JV_TL_ref.dat','JV_TL_1.dat','JV_TL_2.dat','JV_TL_3.dat','JV_TL_4.dat','JV_TL_5.dat']
         Var_files = ['Var_TL_ref.dat','Var_TL_1.dat','Var_TL_2.dat','Var_TL_3.dat','Var_TL_4.dat','Var_TL_5.dat']
-        JVscaps_lst = [path_scaps / 'TLtestref.iv', path_scaps / 'TLtest1.iv', path_scaps / 'TLtest2.iv',
-                     path_scaps / 'TLtest3.iv', path_scaps / 'TLtest4.iv', path_scaps / 'TLtest5.iv']
-        NPexp_lst = [path_scaps / 'npTLtestref.eb', path_scaps / 'npTLtest1.eb', path_scaps / 'npTLtest2.eb',
-                     path_scaps / 'npTLtest3.eb', path_scaps / 'npTLtest4.eb', path_scaps / 'npTLtest5.eb']
+        JVscaps_lst = [os.path.join(path_scaps, 'TLtestref.iv'), os.path.join(path_scaps, 'TLtest1.iv'), os.path.join(path_scaps, 'TLtest2.iv'),
+                     os.path.join(path_scaps, 'TLtest3.iv'), os.path.join(path_scaps, 'TLtest4.iv'), os.path.join(path_scaps, 'TLtest5.iv')]
+        NPexp_lst = [os.path.join(path_scaps, 'npTLtestref.eb'), os.path.join(path_scaps, 'npTLtest1.eb'), os.path.join(path_scaps, 'npTLtest2.eb'),
+                     os.path.join(path_scaps, 'npTLtest3.eb'), os.path.join(path_scaps, 'npTLtest4.eb'), os.path.join(path_scaps, 'npTLtest5.eb')]
         JV_plot_filename = 'JV_Pin_nip_configuration_SIMsalabim'+ext_save_pic 
         np_plot_filename = 'np_Pin_nip_configuration_SIMsalabim'+ext_save_pic 
         has_TL = True
@@ -246,8 +256,8 @@ if __name__ == '__main__':
     if Traps_configuration:
         print('\n')
         print('Start the bulk traps configuration comparison:')
-        path_scaps = Path(curr_dir + slash + 'Test simulation/Traps Configuration')
-        Store_Folder = Path(curr_dir + slash + 'Test simulation/Traps Configuration')
+        path_scaps = os.path.join(curr_dir, 'Test simulation/Traps Configuration')
+        Store_Folder = os.path.join(curr_dir, 'Test simulation/Traps Configuration')
         str_lst = ['-Bulk_tr 1e21 -Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_Traps_ref.dat -Var_file Var_Traps_ref.dat -Tr_type_B 0',
                    '-Bulk_tr 1e20 -Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_Traps_1.dat -Var_file Var_Traps_1.dat -Tr_type_B 0',
                    '-Tr_type_B 1 -Bulk_tr 1e21 -Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_Traps_2.dat -Var_file Var_Traps_2.dat',
@@ -264,14 +274,14 @@ if __name__ == '__main__':
                   'Test number 6', 'Test number 7', 'Test number 8', 'Test number 9', 'Test number 10', 'Test number 11', ]
         JV_files = ['JV_Traps_ref.dat','JV_Traps_1.dat','JV_Traps_2.dat','JV_Traps_3.dat','JV_Traps_4.dat','JV_Traps_5.dat','JV_Traps_6.dat','JV_Traps_7.dat','JV_Traps_8.dat','JV_Traps_9.dat','JV_Traps_10.dat','JV_Traps_11.dat', ]
         Var_files = ['Var_Traps_ref.dat','Var_Traps_1.dat','Var_Traps_2.dat','Var_Traps_3.dat','Var_Traps_4.dat','Var_Traps_5.dat','Var_Traps_6.dat','Var_Traps_7.dat','Var_Traps_8.dat','Var_Traps_9.dat','Var_Traps_10.dat','Var_Traps_11.dat', ]
-        JVscaps_lst = [path_scaps / 'traptestref.iv', path_scaps / 'traptest1.iv', path_scaps / 'traptest2.iv',
-                     path_scaps / 'traptest3.iv',path_scaps / 'traptest4.iv', path_scaps / 'traptest5.iv',
-                     path_scaps / 'traptest6.iv',path_scaps / 'traptest7.iv', path_scaps / 'traptest8.iv',
-                     path_scaps / 'traptest9.iv', path_scaps / 'traptest10.iv', path_scaps / 'traptest11.iv']
-        NPexp_lst = [path_scaps / 'nptraptestref.eb', path_scaps / 'nptraptest1.eb', path_scaps / 'nptraptest2.eb',
-                     path_scaps / 'nptraptest3.eb',path_scaps / 'nptraptest4.eb', path_scaps / 'nptraptest5.eb',
-                     path_scaps / 'nptraptest6.eb',path_scaps / 'nptraptest7.eb', path_scaps / 'nptraptest8.eb',
-                     path_scaps / 'nptraptest9.eb', path_scaps / 'nptraptest10.eb', path_scaps / 'nptraptest11.eb']
+        JVscaps_lst = [os.path.join(path_scaps, 'traptestref.iv'), os.path.join(path_scaps, 'traptest1.iv'), os.path.join(path_scaps, 'traptest2.iv'),
+                     os.path.join(path_scaps, 'traptest3.iv'),os.path.join(path_scaps, 'traptest4.iv'), os.path.join(path_scaps, 'traptest5.iv'),
+                     os.path.join(path_scaps, 'traptest6.iv'),os.path.join(path_scaps, 'traptest7.iv'), os.path.join(path_scaps, 'traptest8.iv'),
+                     os.path.join(path_scaps, 'traptest9.iv'), os.path.join(path_scaps, 'traptest10.iv'), os.path.join(path_scaps, 'traptest11.iv')]
+        NPexp_lst = [os.path.join(path_scaps, 'nptraptestref.eb'), os.path.join(path_scaps, 'nptraptest1.eb'), os.path.join(path_scaps, 'nptraptest2.eb'),
+                     os.path.join(path_scaps, 'nptraptest3.eb'),os.path.join(path_scaps, 'nptraptest4.eb'), os.path.join(path_scaps, 'nptraptest5.eb'),
+                     os.path.join(path_scaps, 'nptraptest6.eb'),os.path.join(path_scaps, 'nptraptest7.eb'), os.path.join(path_scaps, 'nptraptest8.eb'),
+                     os.path.join(path_scaps, 'nptraptest9.eb'), os.path.join(path_scaps, 'nptraptest10.eb'), os.path.join(path_scaps, 'nptraptest11.eb')]
         JV_plot_filename = 'JV_Traps_configuration_SIMsalabim'+ext_save_pic 
         np_plot_filename = 'np_Traps_configuration_SIMsalabim'+ext_save_pic 
         has_TL = True
@@ -281,8 +291,8 @@ if __name__ == '__main__':
     if Interface_traps_configuration:
         print('\n')
         print('Start the interface traps configuration comparison:')
-        path_scaps = Path(curr_dir + slash + 'Test simulation/Interface Traps Configuration')
-        Store_Folder = Path(curr_dir + slash + 'Test simulation/Interface Traps Configuration')
+        path_scaps = os.path.join(curr_dir, 'Test simulation/Interface Traps Configuration')
+        Store_Folder = os.path.join(curr_dir, 'Test simulation/Interface Traps Configuration')
         str_lst = ['-St_L 1e14 -Tr_type_L 0 -St_R 1e14 -Tr_type_R 0 -Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_InterfaceTraps_ref.dat -Var_file Var_InterfaceTraps_ref.dat',
                    '-St_L 1e13 -Tr_type_L 0 -St_R 1e13 -Tr_type_R 0 -Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_InterfaceTraps_1.dat -Var_file Var_InterfaceTraps_1.dat',
                    '-St_L 1e14 -Tr_type_L -1 -St_R 1e14 -Tr_type_R 1 -Nc 1e24 -Gehp 4.2e27 -L 340e-9 -L_LTL 20e-9 -L_RTL 20e-9 -JV_file JV_InterfaceTraps_2.dat -Var_file Var_InterfaceTraps_2.dat',
@@ -300,15 +310,18 @@ if __name__ == '__main__':
                   'Test number 11', ]
         JV_files = ['JV_InterfaceTraps_ref.dat','JV_InterfaceTraps_1.dat','JV_InterfaceTraps_2.dat','JV_InterfaceTraps_3.dat','JV_InterfaceTraps_4.dat','JV_InterfaceTraps_5.dat','JV_InterfaceTraps_6.dat','JV_InterfaceTraps_7.dat','JV_InterfaceTraps_8.dat','JV_InterfaceTraps_9.dat','JV_InterfaceTraps_10.dat','JV_InterfaceTraps_11.dat', ]
         Var_files = ['Var_InterfaceTraps_ref.dat','Var_InterfaceTraps_1.dat','Var_InterfaceTraps_2.dat','Var_InterfaceTraps_3.dat','Var_InterfaceTraps_4.dat','Var_InterfaceTraps_5.dat','Var_InterfaceTraps_6.dat','Var_InterfaceTraps_7.dat','Var_InterfaceTraps_8.dat','Var_InterfaceTraps_9.dat','Var_InterfaceTraps_10.dat','Var_InterfaceTraps_11.dat', ]
-        JVscaps_lst = [path_scaps / 'iftestref.iv', path_scaps / 'iftest1.iv', path_scaps / 'iftest2.iv',
-                     path_scaps / 'iftest3.iv',path_scaps / 'iftest4.iv', path_scaps / 'iftest5.iv',
-                     path_scaps / 'iftest6.iv',path_scaps / 'iftest7.iv', path_scaps / 'iftest8.iv',
-                     path_scaps / 'iftest9.iv', path_scaps / 'iftest10.iv', path_scaps / 'iftest11.iv']
-        NPexp_lst = [path_scaps / 'npiftestref.eb', path_scaps / 'npiftest1.eb', path_scaps / 'npiftest2.eb',
-                     path_scaps / 'npiftest3.eb',path_scaps / 'npiftest4.eb', path_scaps / 'npiftest5.eb',
-                     path_scaps / 'npiftest6.eb',path_scaps / 'npiftest7.eb', path_scaps / 'npiftest8.eb',
-                     path_scaps / 'npiftest9.eb', path_scaps / 'npiftest10.eb', path_scaps / 'npiftest11.eb']
+        JVscaps_lst = [os.path.join(path_scaps, 'iftestref.iv'), os.path.join(path_scaps, 'iftest1.iv'), os.path.join(path_scaps, 'iftest2.iv'),
+                     os.path.join(path_scaps, 'iftest3.iv'),os.path.join(path_scaps, 'iftest4.iv'), os.path.join(path_scaps, 'iftest5.iv'),
+                     os.path.join(path_scaps, 'iftest6.iv'),os.path.join(path_scaps, 'iftest7.iv'), os.path.join(path_scaps, 'iftest8.iv'),
+                     os.path.join(path_scaps, 'iftest9.iv'), os.path.join(path_scaps, 'iftest10.iv'), os.path.join(path_scaps, 'iftest11.iv')]
+        NPexp_lst = [os.path.join(path_scaps, 'npiftestref.eb'), os.path.join(path_scaps, 'npiftest1.eb'), os.path.join(path_scaps, 'npiftest2.eb'),
+                     os.path.join(path_scaps, 'npiftest3.eb'),os.path.join(path_scaps, 'npiftest4.eb'), os.path.join(path_scaps, 'npiftest5.eb'),
+                     os.path.join(path_scaps, 'npiftest6.eb'),os.path.join(path_scaps, 'npiftest7.eb'), os.path.join(path_scaps, 'npiftest8.eb'),
+                     os.path.join(path_scaps, 'npiftest9.eb'), os.path.join(path_scaps, 'npiftest10.eb'), os.path.join(path_scaps, 'npiftest11.eb')]
         JV_plot_filename = 'JV_Interface_traps_configuration_SIMsalabim'+ext_save_pic 
         np_plot_filename = 'np_Interface_traps_configuration_SIMsalabim'+ext_save_pic 
         has_TL = True
         SIMsalabim_vs_scaps(path_scaps, str_lst, has_TL, labels, JV_files, Var_files,path2SIMsalabim,Store_Folder, JVscaps_lst, NPexp_lst, JV_plot_filename, np_plot_filename)
+
+        # reload the original device_parameters.txt file
+        os.rename(os.path.join(path2SIMsalabim,'device_parameters_saved.txt'), os.path.join(path2SIMsalabim,'device_parameters.txt'))
