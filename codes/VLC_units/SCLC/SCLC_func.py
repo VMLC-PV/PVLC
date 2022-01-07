@@ -198,28 +198,195 @@ def SCLC_get_data_plot(volt,curr):
     J_slopef = np.asarray(curr)
 
     # Get max slope if max slopes > 2.2
-    idx_maxf = np.argmax(slopesf)
+    idx_maxf = np.argmax(slopesf[4:]) # remove first 4 points in case it is noisy
     max_slopesf = slopesf[idx_maxf]
-    
     if max_slopesf>2.0:
         get_tangentf = 1
     else: get_tangentf = 0
 
 
     # Calculate tangent and crossing point
-    tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f = [],[],[],[],[],[],[]
+    tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f,Vinf,Jinf = [],[],[],[],[],[],[],[],[]
     if get_tangentf == 1:
-            tang_val_V1f = np.exp(np.log(J_slopef[0])+1*(np.log(V_slopef)-np.log(V_slopef[0])))
+            tang_val_V1f = np.exp(np.log(J_slopef[0])+slopesf[0]*(np.log(V_slopef)-np.log(V_slopef[0])))
             tang_val_V2f = np.exp(np.log(J_slopef[idx_maxf])+max_slopesf*(np.log(V_slopef)-np.log(V_slopef[idx_maxf])))
-            tang_val_V3f = np.exp(np.log(J_slopef[-1])+2*(np.log(V_slopef)-np.log(V_slopef[-1])))
-            V1f = np.exp((1/(1-max_slopesf)*np.log((J_slopef[idx_maxf]*V_slopef[0])/(J_slopef[0]*(V_slopef[idx_maxf]**max_slopesf)))))
-            J1f = np.exp(np.log(J_slopef[0])+1*(np.log(V1f)-np.log(V_slopef[0])))
-            V2f = np.exp((1/(2-max_slopesf)*np.log((J_slopef[idx_maxf]*(V_slopef[-1]**2))/(J_slopef[-1]*(V_slopef[idx_maxf]**max_slopesf)))))
-            J2f = np.exp(np.log(J_slopef[-1])+2*(np.log(V2f)-np.log(V_slopef[-1])))
+            tang_val_V3f = np.exp(np.log(J_slopef[-1])+slopesf[-1]*(np.log(V_slopef)-np.log(V_slopef[-1])))
+            V1f = np.exp((1/(slopesf[0]-max_slopesf)*np.log((J_slopef[idx_maxf]*(V_slopef[0]**slopesf[0]))/(J_slopef[0]*(V_slopef[idx_maxf]**max_slopesf)))))
+            J1f = np.exp(np.log(J_slopef[0])+slopesf[0]*(np.log(V1f)-np.log(V_slopef[0])))
+            V2f = np.exp((1/(slopesf[-1]-max_slopesf)*np.log((J_slopef[idx_maxf]*(V_slopef[-1]**slopesf[-1]))/(J_slopef[-1]*(V_slopef[idx_maxf]**max_slopesf)))))
+            J2f = np.exp(np.log(J_slopef[-1])+slopesf[-1]*(np.log(V2f)-np.log(V_slopef[-1])))
+            Vinf = V_slopef[idx_maxf]
+            Jinf = J_slopef[idx_maxf]
 
     # print(calc_net_charge(V1,thick))
     # print(calc_net_charge(V2,thick))
 
-    return V_slopef,J_slopef,slopesf,get_tangentf,idx_maxf,max_slopesf,tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f
+    return V_slopef,J_slopef,slopesf,get_tangentf,idx_maxf,max_slopesf,tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f,Vinf,Jinf
+
+def Make_SCLC_plot(num_fig,data_JV,x='Vext',y=['Jext'],show_tangent=[1,2,3],xlimits=[],ylimits=[],plot_type=0,labels='',colors='b',line_type = ['-'],mark='',legend=True,plot_jvexp=False,data_JVexp=pd.DataFrame(),save_yes=False,pic_save_name='JV.jpg'):
+    """ Make typical plot for SCLC measurement analysis for SIMsalabim  
+    
+    Parameters
+    ----------
+    num_fig : int
+        number of the fig to plot JV
+
+    data_JV : DataFrame
+        Panda DataFrame containing JV_file
+
+    x : str, optional
+        xaxis data  (default = 'Vext'), by default 'Vext'
+
+    y : list of str, optional
+        yaxis data can be multiple like ['Jext','Jbimo']  (default = ['Jext']), by default ['Jext']
+    
+    show_tangent : list of int, optional
+        show tangent line at V1,Vinf,V2  (default = [1,2,3]), by default [1,2,3]
+
+    xlimits : list, optional
+        x axis limits if = [] it lets python chose limits, by default []
+
+    ylimits : list, optional
+        y axis limits if = [] it lets python chose limits, by default []
+
+    plot_type : int, optional
+        type of plot 1 = logx, 2 = logy, 3 = loglog else linlin (default = linlin), by default 0
+
+    labels : str, optional
+        label of the JV, by default ''
+
+    colors : str, optional
+        color for the JV line, by default 'b'
+
+    line_type : list, optional
+        type of line for simulated data plot
+        size line_type need to be = size(y), by default ['-']
+
+    mark : str, optional
+        type of Marker for the JV, by default ''
+
+    legend : bool, optional
+        Display legend or not, by default True
+
+    plot_jvexp : bool, optional
+        plot an experimental JV or not, by default False
+
+    data_JVexp : [type], optional
+        Panda DataFrame containing experimental JV_file with 'V' the voltage and 'J' the current, by default pd.DataFrame()
+
+    save_yes : bool, optional
+        If True, save JV as an image with the  file name defined by "pic_save_name", by default False
+
+    pic_save_name : str, optional
+        name of the file where the figure is saved, by default 'JV.jpg'
+    
+    Returns
+    -------
+    Vslopef : list
+        list of of the Voltage values after filtering
+    Jslopef : list
+        list of of the current values after filtering
+    slopesf : list
+        list of logarithmic slopes of the JV after filtering
+    get_tangentf : bool
+        True if tangents are calculated i.e. if max(slopef) > 2, False if not
+    idx_maxf : int
+        index of the max slope of the JV after filtering
+    max_slopesf : float
+        max slope of the JV after filtering
+    tang_val_V1f : list
+        list of the tangent values of the JV after filtering for the first tangent point. Typically crossing between the ohmic and Trap filled limited regime.
+    tang_val_V2f : list
+        list of the tangent values of the JV after filtering for the second tangent point (here the inflexion point)
+    tang_val_V3f : list
+        list of the tangent values of the JV after filtering for the third tangent point. Typically crossing between the Trap filled limited regime and the Mott-Gurney regime.
+    V1f : float
+        Voltage value of the first crossing point
+    J1f : float
+        current value of the first crossing point
+    V2f : float
+        Voltage value of the second crossing point
+    J2f : float
+        current value of the second crossing point
+    Vinf : float
+        Voltage value of the inflexion point
+    Jinf : float
+        current value of the inflexion point
+
+    """    
+
+    # Filter data for V < 0 and J < 0
+    print('In Make_SCLC_plot')
+    print('Filtering data for V < 0 and J < 0')
+    print('If you want to plot JV with V < 0, you need to change modify your input first')
+    data_JV = data_JV[data_JV.Vext > 0]
+    data_JV = data_JV[data_JV.Jext > 0]
+
+    # Get tangent and crossing point data
+    if show_tangent != []:
+        V_slopef,J_slopef,slopesf,get_tangentf,idx_maxf,max_slopesf,tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f,Vinf,Jinf = SCLC_get_data_plot(data_JV['Vext'],data_JV['Jext'])
+                    
+    if len(y) > len(line_type):
+        print('Invalid line_type list, we meed len(y) == len(line_type)')
+        print('We will use default line type instead')
+        line_type = []
+        for counter, value in enumerate(y):
+            line_type.append('-')
+
+    plt.figure(num_fig)
+    ax_JVs_plot = plt.axes()
+    for i,line in zip(y,line_type):
+        if plot_type == 1:
+            ax_JVs_plot.semilogx(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            if plot_jvexp:
+                ax_JVs_plot.semilogx(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            
+        
+        elif plot_type == 2:
+            ax_JVs_plot.semilogy(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)   
+            if plot_jvexp:
+                ax_JVs_plot.semilogy(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            
+        elif plot_type == 3:
+            ax_JVs_plot.loglog(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            if plot_jvexp:
+                ax_JVs_plot.loglog(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            
+            if get_tangentf:
+                print('Plotting tangents and crossing points')
+                if 1 in show_tangent:
+                    ax_JVs_plot.loglog(V_slopef,tang_val_V1f/10,color=colors,linestyle=line)
+                if 2 in show_tangent:
+                    ax_JVs_plot.loglog(V_slopef,tang_val_V2f/10,color=colors,linestyle=line)
+                if 3 in show_tangent:
+                    ax_JVs_plot.loglog(V_slopef,tang_val_V3f/10,color=colors,linestyle=line)
+                if 1 in show_tangent and 2 in show_tangent:
+                    ax_JVs_plot.loglog(V1f,J1f/10,'rs',markersize=10)
+                if 2 in show_tangent and 3 in show_tangent:
+                    ax_JVs_plot.loglog(V2f,J2f/10,'mo',markersize=10)
+                ax_JVs_plot.loglog(Vinf,Jinf/10,'bo',markersize=10)
+            
+        else:
+            ax_JVs_plot.plot(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            if plot_jvexp:
+                ax_JVs_plot.plot(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+        
+    
+    # legend
+    if legend == True:
+        plt.legend(loc='best',frameon=False,fontsize = 30)
+    if xlimits != []:
+        plt.xlim(xlimits)
+    if ylimits != []:
+        plt.ylim(ylimits)
+    plt.grid(b=True,which='both')
+    plt.xlabel('Applied Voltage [V]')
+    plt.ylabel('Current Density [mA cm$^{-2}$]')
+    plt.tight_layout()
+    if save_yes:
+        plt.savefig(pic_save_name,dpi=100,transparent=True)
+    
+    if show_tangent != []:
+        return V_slopef,J_slopef,slopesf,get_tangentf,idx_maxf,max_slopesf,tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f,Vinf,Jinf
 
 

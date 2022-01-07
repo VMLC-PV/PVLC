@@ -101,7 +101,7 @@ def zimt_tj_plot(num_fig,data_tj,x='t',y=['Jext'],xlimits=[],ylimits=[],plot_typ
     plt.grid(b=True,which='both')
     plt.xlabel('Time [s]')
     plt.ylabel('Current Density [mA cm$^{-2}$]')
-    # plt.tight_layout()
+    plt.tight_layout()
     if save_yes:
         plt.savefig(pic_save_name,dpi=300,transparent=True)
 

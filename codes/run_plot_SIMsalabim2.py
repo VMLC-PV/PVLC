@@ -72,7 +72,7 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
     if fixed_str is None:
         if verbose:
             print('No fixed string given, using default value')
-        fixed_str = ''  # add any fixed string to the simulation command
+        fixed_str = ['']  # add any fixed string to the simulation command
 
     # Parameters to vary
     if parameters is None:
@@ -116,28 +116,32 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
 
     
     idx = 0
-    for i in list(itertools.product(*val)): # iterate over all combinations of parameters
-        str_line = ''
-        lab = ''
-        JV_name = 'JV'
-        Var_name = 'Var'
-        scPars_name = 'scPars'
-        for j,name in zip(i,nam):
-            str_line = str_line +'-'+name+' {:.2e} '.format(j)
-            lab = lab+name+' {:.2e} '.format(j)
-            JV_name = JV_name +'_'+name +'_{:.2e}'.format(j)
-            Var_name = Var_name +'_'+ name +'_{:.2e}'.format(j)
-            scPars_name = scPars_name +'_'+ name +'_{:.2e}'.format(j)
-        str_lst.append(fixed_str+ ' ' +str_line+ '-JV_file '+JV_name+ '.dat -Var_file '+Var_name+'.dat -scPars_file '+scPars_name+'.dat')# -ExpJV '+JVexp_lst[idx])
-        JV_files.append(os.path.join(path2SIMsalabim , str(JV_name+ '.dat')))
-        Var_files.append(os.path.join(path2SIMsalabim , str(Var_name+ '.dat')))
-        scPars_files.append(os.path.join(path2SIMsalabim , str(scPars_name+ '.dat')))
-        labels.append(lab)
-        if not add_exp:
-            JVexp_lst.append('')
-        code_name_lst.append('SimSS')
-        path_lst.append(path2SIMsalabim)
-        idx += 1
+    idx2 = 0
+    for fix in fixed_str: # loop over fixed strings
+
+        for i in list(itertools.product(*val)): # iterate over all combinations of parameters
+            str_line = ''
+            lab = ''
+            JV_name = 'JV'
+            Var_name = 'Var'
+            scPars_name = 'scPars'
+            for j,name in zip(i,nam):
+                str_line = str_line +'-'+name+' {:.2e} '.format(j)
+                lab = lab+name+' {:.2e} '.format(j)
+                JV_name = JV_name +'_'+name +'_{:.2e}'.format(j)
+                Var_name = Var_name +'_'+ name +'_{:.2e}'.format(j)
+                scPars_name = scPars_name +'_'+ name +'_{:.2e}'.format(j)
+            str_lst.append(fix+ ' ' +str_line+ '-JV_file '+JV_name+'_'+str(idx2)+'.dat -Var_file '+Var_name+'.dat -scPars_file '+scPars_name+'_'+str(idx2)+'.dat')# -ExpJV '+JVexp_lst[idx])
+            JV_files.append(os.path.join(path2SIMsalabim , str(JV_name+'_'+str(idx2)+'.dat')))
+            Var_files.append(os.path.join(path2SIMsalabim , str(Var_name+ '.dat')))
+            scPars_files.append(os.path.join(path2SIMsalabim , str(scPars_name+'_'+str(idx2)+ '.dat')))
+            labels.append(lab)
+            if not add_exp:
+                JVexp_lst.append('')
+            code_name_lst.append('SimSS')
+            path_lst.append(path2SIMsalabim)
+            idx += 1
+        idx2 += 1
 
     # print(str_lst)
     colors = plt.cm.viridis(np.linspace(0,1,max(len(str_lst),4)+1)) # prepare color for plots
@@ -166,8 +170,9 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
                 data_JVexp = pd.DataFrame()
 
 
-            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.3,1.2],ylimits=[-10,10],pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)))
-            # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=2,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp)
+            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.3,1.2],ylimits=[-10,10],pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)),save_yes=True)
+            # data_JV['Jext_abs'] = abs(data_JV['Jext'])
+            # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=2,x='Vext',y=['Jext_abs'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.5,1.4],ylimits=[1e-8,2e2],pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)),save_yes=True)
 
         ## Plot Var_file
         if plot_nrj_diag or plot_densities:
@@ -208,5 +213,37 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
 
 if __name__ == '__main__':
     
-    run_plot_SIMsalabim()
+    # fixed_strs = ['','-W_L 4.25','-L_LTL 3e-9 -L 153e-9']
+
+    # fixed_strs = ['','-mun_0 2e-9 -mup_0 4e-9','-Lang_pre 1',]
+
+    # fixed_strs = ['','-Bulk_tr 3e23 -Cn 3e-18 -Cp 3e-21 -Etrap 4.1','-Bulk_tr 3e23 -Cn 3e-18 -Cp 9.5e-23 -Etrap 4.6 -NP 1000']
+
+    fixed_strs = ['','-Bulk_tr 3e23 -Cn 3e-18 -Cp 3e-21 -Etrap 4.1','-Bulk_tr 3e23 -Cn 3e-18 -Cp 9.5e-17 -Etrap 4.6 -NP 2000 -accDens 0.2 -until_Voc 0']
+
+
+    # fixed_strs = ['','-Rshunt 2.25e-1','-Rseries 1.575e-3']
+
+    # fixed_strs = ['', '-n_0 1e23', '-Gehp 9.45e26' ]
+
+    parameters = []
+    parameters.append({'name':'Gfrac','values':[1]})
+    # parameters.append({'name':'Gfrac','values':list(np.geomspace(1e-3,1,8))})
+    for fix in fixed_strs:
+        JV_files,Var_files,scPars_files = run_plot_SIMsalabim(fixed_str = [fix],parameters = parameters ,plot_nrj_diag=False,plot_densities=False,run_simu=True)
+        # Voc = []
+        # for i in scPars_files:
+        #     perf = pd.read_csv(i,delim_whitespace=True)
+        #     Voc.append(perf['Voc'])
+        
+    #     plt.figure(10,figsize=(10,8))
+    #     plt.semilogx(list(np.geomspace(1e-3,1,8)),Voc)
+    # plt.xlabel('Gfrac')
+    # plt.ylabel('Voc')
+    # plt.xlim([5e-4,1])
+    # plt.ylim([0.5,1.05])
+    # plt.tight_layout()
+    # plt.savefig(os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v427/SimSS','Voc_Gfrac.png'))
+
+
     plt.show()

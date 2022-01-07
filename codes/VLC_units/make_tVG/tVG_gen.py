@@ -6,7 +6,7 @@
 import pandas as pds
 import matplotlib.pyplot as plt
 import numpy as np 
-import math
+import math,sys
 from scipy import integrate
 
 def gaussian_pulse(t, tpulse, width, Imax):
@@ -157,7 +157,7 @@ def zimt_JV_sweep(Vstart,Vfinal,scan_speed,Gen,steps,time_exp =False,tVG_name='t
 
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e')
 
-def zimt_JV_double_sweep(Vstart,Vfinal,scan_speed,Gen,steps,time_exp =False,tVG_name='tVG.txt'):
+def zimt_JV_double_sweep(Vstart,Vfinal,scan_speed,Gen,steps,Vacc=-0.1,time_exp = False,tVG_name='tVG.txt'):
     """Make tVG file for double JV sweep experiment
     Scan voltage back and forth
 
@@ -173,31 +173,54 @@ def zimt_JV_double_sweep(Vstart,Vfinal,scan_speed,Gen,steps,time_exp =False,tVG_
         constant generation rate (i.e. light intensity) (unit: m^-3 s^-1)
     steps : int
         number of JV points 
-    time_exp : bool, optional
+    Vacc : float, optional
+        point of accumulation of row of V's, note: Vacc should be slightly larger than Vmax or slightly lower than Vmin (unit: V)
+    time_exp  : bool, optional
         If True exponential time step is used, else linear time step, by default False
     tVG_name : str, optional
         tVG_file name, by default 'tVG.txt'
     """
-    # Calculate duration of one sweep, the total experiment duration will be 2*tmax  
-    tmax = abs((Vfinal - Vstart)/scan_speed)
     
-    # Chose between exponential or linear time step
+    V,G = [],[]
     if time_exp == True:
-        t = np.geomspace(0,2*tmax,int(steps),endpoint=True)
-        t=np.insert(t,0,0)
-    else :
+        if Vacc > Vstart and Vacc < Vfinal:
+            print('/!\ Error /!\ ')
+            print('Vacc should be slightly larger than Vmax or slightly lower than Vmin')
+            print('We are stopping the program, change the value of Vacc')
+            sys.exit()
+        # Vacc = -0.1
+        d = Vacc - Vfinal
+        idx = 0
+        t = [0]
+        for i in range(int(steps/2)):
+            LogarithmicV = Vacc - d*np.exp((1-i/(int(steps/2)-1))*np.log((Vacc-Vstart)/d))
+            V.append(LogarithmicV)
+            if idx > 0:
+                t.append(t[idx-1] + (abs(LogarithmicV-V[idx-1]))/scan_speed)
+            G.append(Gen)
+            idx += 1
+
+        Vrev = V[::-1]
+        Vrev.pop(0)
+        V.extend(Vrev)
+        for i in Vrev:
+            t.append(t[idx-1] + (abs(i-V[idx-1]))/scan_speed)
+            G.append(Gen)
+            idx += 1
+    else:
+        # Calculate duration of one sweep, the total experiment duration will be 2*tmax  
+        tmax = abs((Vfinal - Vstart)/scan_speed)
         t1 = np.linspace(0,tmax,int(steps/2),endpoint=True)
         t2 = np.linspace(tmax,2*tmax,int(steps/2),endpoint=True)
         t2 = np.delete(t2,[0])
         t = np.append(t1,t2)
-    
-    V,G = [],[]
-    for i in t:
-        if i < tmax:
-            V.append(np.sign(Vfinal-Vstart)*scan_speed*i + Vstart)
-        else:
-            V.append(-np.sign(Vfinal-Vstart)*(scan_speed*i) + np.sign(Vfinal-Vstart)*Vstart +2*Vfinal)
-        G.append(Gen)
+        for i in t:
+            if i < tmax:
+                V.append(np.sign(Vfinal-Vstart)*scan_speed*i + Vstart)
+            else:
+                V.append(-np.sign(Vfinal-Vstart)*(scan_speed*i) + np.sign(Vfinal-Vstart)*Vstart +2*Vfinal)
+            G.append(Gen)
+        
 
     tVG = pds.DataFrame(np.stack([t,np.asarray(V),np.asarray(G)]).T,columns=['t','Vext','Gehp'])
 
@@ -421,8 +444,8 @@ def zimt_TPV(tmin,tmax,Gen_pulse,G0,tpulse,width_pulse = 2e-9,time_exp =False,st
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e')
 
 
-def zimt_TPC(tmin,tmax,Gen_pulse,G0,tpulse,width_pulse = 2e-9,time_exp =False,steps=100,tVG_name='tVG.txt'):
-    """Make tVG file for transient photocurrent (TPC) experiment
+def zimt_TPC_Gauss_pulse(tmin,tmax,Gen_pulse,G0,tpulse,width_pulse = 2e-9,time_exp =False,steps=100,tVG_name='tVG.txt'):
+    """Make tVG file for transient photocurrent (TPC) experiment with a gaussian pulse for the light excitation.
 
     Parameters
     ----------
@@ -483,6 +506,66 @@ def zimt_TPC(tmin,tmax,Gen_pulse,G0,tpulse,width_pulse = 2e-9,time_exp =False,st
     tVG = pds.DataFrame(np.stack([t,np.asarray(V),np.asarray(G)]).T,columns=['t','Vext','Gehp'])
 
     tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.3e')
+
+def zimt_TPC_square_pulse(tmin,tmax,Gen_pulse,G0,width_pulse,tLp = 20e-9,time_exp =False,steps=100,tVG_name='tVG.txt'):
+    """Make tVG file for transient photocurrent (TPC) experiment with a gaussian pulse for the light excitation.
+
+    Parameters
+    ----------
+    tmin : float
+        first time step after 0 (unit: s)
+    tmax : float
+        final time step (unit: s)
+    Gen_pulse : float
+        Generation rate at the top of the squared pulse __--__ (i.e. light intensity) (unit: m^-3 s^-1)
+    G0 : float
+        background generation rate (i.e. light intensity) (unit: m^-3 s^-1)
+    width_pulse : float
+        width of the light pulse (unit: s)
+    tLp : float, optional
+        LED pulse fall/rise time (unit: s), by default 20e-9
+    time_exp : bool, optional
+        if True chose exponential time step else keep time step linear, by default False
+    steps : int, optional
+        if time_exp = True number of exponential time step after voltage switch, by default 100
+    tVG_name : str, optional
+        tVG_file name, by default 'tVG.txt'
+    """    
+
+    V,G = [],[]
+
+    if time_exp == True:
+        t = np.geomspace(tmin,width_pulse,int(steps/2))
+        t1 = np.geomspace(tmin,tmax-width_pulse,int(steps/2))
+        t = np.append(t,t1+width_pulse)
+    else :
+        t = np.linspace(tmin, tmax, steps)
+
+    
+    V,G = [],[]
+    for i in t:
+        if i < width_pulse:
+            if (Gen_pulse)*(1-np.exp(-i/tLp))+G0 > 1e10: #set G = 0 when G is too small (for stability in ZimT)
+                G.append((Gen_pulse)*(1-np.exp(-i/tLp))+G0)
+            else:
+                G.append(0)
+        else:
+            if Gen_pulse*np.exp(-(i-width_pulse)/tLp)+G0 > 1e10:
+                G.append(Gen_pulse*np.exp(-(i-width_pulse)/tLp)+G0)
+            else:
+                G.append(0)
+        V.append(0)
+    
+    #set starting condition for t = 0, G = G0
+    t=np.insert(t,0,0)
+    V = np.asarray(V)
+    G = np.asarray(G)
+    V=np.insert(V,0,0)
+    G=np.insert(G,0,G0)
+
+    tVG = pds.DataFrame(np.stack([t,V,G]).T,columns=['t','Vext','Gehp'])
+
+    tVG.to_csv(tVG_name,sep=' ',index=False,float_format='%.7e')
 
 
 def zimt_CELIV(tmin,tmax,Voffset,slopeV,Gen,tpulse,tstep,tdelay,width_pulse = 2e-9,time_exp=False,steps=100,tVG_name='tVG.txt'):

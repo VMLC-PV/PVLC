@@ -17,9 +17,10 @@ from VLC_units.simu.get_input_par import *
 from VLC_units.make_tVG.tVG_gen import *
 from VLC_units.cleanup_folder.clean_folder import *
 from VLC_units.useful_functions.aux_func import *
+from VLC_units.SCLC.SCLC_func import *
 
 # Main Program
-def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'JV_Hyst',clean_output = False,verbose = True):  
+def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'JV_Hyst',clean_output = False,verbose = True):  
     """Run single JV sweep simulation using ZimT
 
     Parameters
@@ -59,7 +60,7 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
 
     curr_dir = os.getcwd()              # Current working directory
     if path2ZimT is None:
-        path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v427/ZimT')                  # Path to ZimT in curr_dir
+        path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v427_sclc/ZimT')                  # Path to ZimT in curr_dir
 
  
     ## Physics constants
@@ -70,11 +71,12 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
     if input_dic is None:
         if verbose:
             print('No JV_Hyst input dictionary given, using default values')
-        Vstart = 1.17                                               # Start voltage (unit: V)
-        Vfinal = 0                                                  # Final voltage (unit: V)
+        Vstart = 0                                               # Start voltage (unit: V)
+        Vfinal = 50                                                  # Final voltage (unit: V)
         scans = np.geomspace(1e-3, 1e4,num=10)                                               # Scan speed (unit: V/s)
         Gens = [0e27]                                             # Average generation rate (unit: m^-3 s^-1) 
         steps = 100                                                 # Number of voltage step
+        Vacc = -0.1                                                # point of accumulation of row of V's, note: Vacc should be slightly larger than Vmax or slightly lower than Vmin (unit: V)
     else:
         if 'Vstart' in input_dic:
             Vstart = input_dic['Vstart']
@@ -86,18 +88,16 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
             Gens = input_dic['Gens']
         if 'steps' in input_dic:
             steps = input_dic['steps']
+        if 'Vacc' in input_dic:
+            Vacc = input_dic['Vacc']
 
     ## Prepare strings to run
     # Fixed string
     if fixed_str is None:
         if verbose:
             print('No fixed string given, using default value')
-        fixed_str = ' -accDens 0.05'  # add any fixed string to the simulation command
+        fixed_str = '-grad 10 -NP 1000'#-accDens 0.5 -NP 5000'  # add any fixed string to the simulation command
 
-    # Initialize 
-    str_lst,code_name_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
-    idx = 0
-    start = time()
 
     # Initialize 
     code_name_lst,str_lst,path_lst,tj_lst,tVG_lst = [],[],[],[],[]
@@ -114,7 +114,7 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
     # Generate tVG files and str_lst 
         for scan in scans:
             for Gen in Gens:
-                zimt_JV_double_sweep(Vstart,Vfinal,scan,Gen,steps,tVG_name=os.path.join(path2ZimT,'tVG_JV_Hyst_scan_{:.2e}_G_{:.2e}.txt'.format(scan,Gen)))
+                zimt_JV_double_sweep(Vstart,Vfinal,scan,Gen,steps,Vacc=Vacc,tVG_name=os.path.join(path2ZimT,'tVG_JV_Hyst_scan_{:.2e}_G_{:.2e}.txt'.format(scan,Gen)),time_exp=True)
                 str_lst.append(fixed_str+' -tVG_file tVG_JV_Hyst_scan_{:.2e}_G_{:.2e}.txt -tj_file tj_JV_Hyst_scan_{:.2e}_G_{:.2e}.dat'.format(scan,Gen,scan,Gen))
                 code_name_lst.append('zimt')
                 path_lst.append(path2ZimT)
@@ -158,55 +158,28 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
                     else:
                         scan_dir2 = scan_dir2[::-1].reset_index()
 
-                    # Get perfs
-                    Jsc_dir1.append(get_Jsc(scan_dir1['Vext'],scan_dir1['Jext'])/10)
-                    Voc_dir1.append(get_Voc(scan_dir1['Vext'],scan_dir1['Jext']))
-                    FF_dir1.append(get_FF(scan_dir1['Vext'],scan_dir1['Jext']))
-                    PCE_dir1.append(get_PCE(scan_dir1['Vext'],scan_dir1['Jext'])/10)
-                    Jsc_dir2.append(get_Jsc(scan_dir2['Vext'],scan_dir2['Jext'])/10)
-                    Voc_dir2.append(get_Voc(scan_dir2['Vext'],scan_dir2['Jext']))
-                    FF_dir2.append(get_FF(scan_dir2['Vext'],scan_dir2['Jext']))
-                    PCE_dir2.append(get_PCE(scan_dir2['Vext'],scan_dir2['Jext'])/10)
+                    # Filter data V < 0 and J < 0
+                    scan1_filter = scan_dir1[scan_dir1.Vext > 0]
+                    scan2_filter = scan_dir2[scan_dir2.Vext > 0]
+                    scan1_filter = scan1_filter[scan1_filter.Jext > 0]
+                    scan2_filter = scan2_filter[scan2_filter.Jext > 0]
+                    
+                    
+                    SCLC_res1 = Make_SCLC_plot(0,scan_dir1,x='Vext',y=['Jext'],ylimits=[1e-4,1e8],show_tangent=[2,3],plot_type=3 ,colors=colors[idx],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False)
+                    
+                    SCLC_res2 = Make_SCLC_plot(1,scan_dir2,x='Vext',y=['Jext'],ylimits=[1e-4,1e8],show_tangent=[2,3],plot_type=3 ,colors=colors[idx],line_type=['--'],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False)
                     
 
-                    zimt_tj_JV_plot(0,scan_dir1,x='Vext',y=['Jext'],xlimits = [-0.1,1.25],ylimits=[-22,2] ,colors=colors[idx],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False)
-                    zimt_tj_JV_plot(0,scan_dir2,x='Vext',y=['Jext'],xlimits = [-0.1,1.25],ylimits=[-22,2] ,colors=colors[idx],line_type=['--'],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False)
+                    plt.figure(3,figsize=size_fig)
+                    plt.semilogx(SCLC_res1[0],SCLC_res1[2],color=colors[idx])
+                    plt.semilogx(SCLC_res2[0],SCLC_res2[2],color=colors[idx],linestyle='--')
+
+
                     idx = idx + 1 
-
-        plt.figure(1)
-        plt.subplot(221)
-        plt.semilogx(scans,PCE_dir2,linestyle='-',marker='None',markersize=10,markerfacecolor='w',label='Forward')
-        plt.semilogx(scans,PCE_dir1,linestyle='-',marker='None',markersize=10,markerfacecolor='w',label='Reverse')
-        plt.xlabel('Scan speed [V s$^{-1}$]')
-        plt.ylabel('PCE [%]')
-        plt.ylim([10,25])
+        plt.figure(3,figsize=size_fig)
+        plt.xlabel('Applied Voltage [V]')
+        plt.ylabel('Slope')
         plt.grid(b=True,which='both')
-        plt.subplot(222)
-        plt.semilogx(scans,FF_dir2,linestyle='-',marker='o',markersize=10,markerfacecolor='w',label='Forward')
-        plt.semilogx(scans,FF_dir1,linestyle='-',marker='^',markersize=10,markerfacecolor='w',label='Reverse')
-        plt.xlabel('Scan speed [V s$^{-1}$]')
-        plt.ylabel('FF')
-        plt.ylim([0.5,1])
-        plt.grid(b=True,which='both')
-        plt.subplot(223)
-        plt.semilogx(scans,Voc_dir2,linestyle='-',marker='o',markersize=10,markerfacecolor='w',label='Forward')
-        plt.semilogx(scans,Voc_dir1,linestyle='-',marker='^',markersize=10,markerfacecolor='w',label='Reverse')
-        plt.xlabel('Scan speed [V s$^{-1}$]')
-        plt.ylabel('V$_{OC}$ [V]')
-        plt.ylim([0.9,1.3])
-        plt.grid(b=True,which='both')
-        plt.subplot(224)
-        plt.semilogx(scans,abs(np.asarray(Jsc_dir2)),linestyle='-',marker='o',markersize=10,markerfacecolor='w',label='Forward')
-        plt.semilogx(scans,abs(np.asarray(Jsc_dir1)),linestyle='-',marker='^',markersize=10,markerfacecolor='w',label='Reverse')
-        plt.xlabel('Scan speed [V s$^{-1}$]')
-        plt.ylabel('J$_{SC}$ mA cm$^{-2}$')
-        plt.ylim([18,26])
-        # plt.legend(loc='best', title="Scan direction:",fontsize=35)
-        plt.tight_layout()
-        plt.grid(b=True,which='both')
-        plt.savefig(os.path.join(path2ZimT,Store_folder,'Fast_hyst_eff.jpg'),dpi=100,transparent=True)
-
-        print(PCE_dir1[0]-PCE_dir1[-1])
         
 
     ## Clean-up outputs from folder
