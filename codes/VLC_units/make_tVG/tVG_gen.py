@@ -194,6 +194,8 @@ def zimt_JV_double_sweep(Vstart,Vfinal,scan_speed,Gen,steps,Vacc=-0.1,time_exp =
         t = [0]
         for i in range(int(steps/2)):
             LogarithmicV = Vacc - d*np.exp((1-i/(int(steps/2)-1))*np.log((Vacc-Vstart)/d))
+            if abs(LogarithmicV) < 1e-10: # to correct for numerical approx around 0
+                LogarithmicV = 0 
             V.append(LogarithmicV)
             if idx > 0:
                 t.append(t[idx-1] + (abs(LogarithmicV-V[idx-1]))/scan_speed)

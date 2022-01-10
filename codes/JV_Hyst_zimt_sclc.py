@@ -20,7 +20,7 @@ from VLC_units.useful_functions.aux_func import *
 from VLC_units.SCLC.SCLC_func import *
 
 # Main Program
-def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'JV_Hyst',clean_output = False,verbose = True):  
+def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'JV_Hyst',clean_output = False,verbose = True):  
     """Run single JV sweep simulation using ZimT
 
     Parameters
@@ -73,9 +73,9 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Fal
             print('No JV_Hyst input dictionary given, using default values')
         Vstart = 0                                               # Start voltage (unit: V)
         Vfinal = 50                                                  # Final voltage (unit: V)
-        scans = np.geomspace(1e-3, 1e4,num=10)                                               # Scan speed (unit: V/s)
+        scans = np.geomspace(1e-3, 1e4,num=5)                                               # Scan speed (unit: V/s)
         Gens = [0e27]                                             # Average generation rate (unit: m^-3 s^-1) 
-        steps = 100                                                 # Number of voltage step
+        steps = 200                                                 # Number of voltage step
         Vacc = -0.1                                                # point of accumulation of row of V's, note: Vacc should be slightly larger than Vmax or slightly lower than Vmin (unit: V)
     else:
         if 'Vstart' in input_dic:
@@ -165,9 +165,9 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Fal
                     scan2_filter = scan2_filter[scan2_filter.Jext > 0]
                     
                     
-                    SCLC_res1 = Make_SCLC_plot(0,scan_dir1,x='Vext',y=['Jext'],ylimits=[1e-4,1e8],show_tangent=[2,3],plot_type=3 ,colors=colors[idx],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False)
+                    SCLC_res1 = Make_SCLC_plot(0,scan_dir1,x='Vext',y=['Jext'],ylimits=[1e-4,1e8],show_tangent=[2,3],plot_type=3 ,colors=colors[idx],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False,save_yes=True)
                     
-                    SCLC_res2 = Make_SCLC_plot(1,scan_dir2,x='Vext',y=['Jext'],ylimits=[1e-4,1e8],show_tangent=[2,3],plot_type=3 ,colors=colors[idx],line_type=['--'],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV.jpg'),legend=False)
+                    SCLC_res2 = Make_SCLC_plot(1,scan_dir2,x='Vext',y=['Jext'],ylimits=[1e-4,1e8],show_tangent=[2,3],plot_type=3 ,colors=colors[idx],line_type=['--'],labels=sci_notation(scan, sig_fig=1)+' V s$^{-1}$',pic_save_name=os.path.join(path2ZimT,Store_folder,'Fast_hyst_JV2.jpg'),legend=False,save_yes=True)
                     
 
                     plt.figure(3,figsize=size_fig)
@@ -180,6 +180,7 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Fal
         plt.xlabel('Applied Voltage [V]')
         plt.ylabel('Slope')
         plt.grid(b=True,which='both')
+        plt.savefig(os.path.join(path2ZimT,Store_folder,'slopes.jpg'),dpi=100,transparent=True)
         
 
     ## Clean-up outputs from folder
@@ -190,7 +191,11 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Fal
 
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 if __name__ == '__main__':
-    JV_Hyst()
+    str_lst = ['-grad 10 -NP 1000 -Bulk_tr 1.5e22 -CNI 5e21 -CPI 5e21 -accDens 0.1 -tolJ 1e-2']#,'-grad 10 -NP 1000 -Bulk_tr 1e22 ','-grad 10 -NP 1000 -Bulk_tr 7e21','-grad 10 -NP 1000 -CNI 1e21 -CPI 1e21']
+    store_folder_lst = ['SCLC_trap_1.5e22_ion_5e21']#,'SCLC_trap_1e22_ion_2e21','SCLC_trap_7e21_ion_2e21','SCLC_trap_1e22_ion_1e21']
+    for i,j in zip(str_lst,store_folder_lst):
+        JV_Hyst(fixed_str = i,Store_folder=j,run_simu = True)
+        # plt.close('all')
     plt.show()
     
     
