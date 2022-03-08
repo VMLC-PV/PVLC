@@ -28,7 +28,7 @@ def sci_notation(number, sig_fig=2):
         else:
             ret_string = "{0:.{1:d}e}".format(number, sig_fig)
             a,b = ret_string.split("e")
-            if int(b) > 0:
+            if int(b) >= 0:
                 b = int(b) #removed leading "+" and strips leading zeros too.
                 c = ''
             else: 
@@ -44,10 +44,16 @@ def sci_notation(number, sig_fig=2):
             ret_string = "{0:.{1:d}e}".format(number, 0)
             a,b = ret_string.split("e")
             b = int(b) #removed leading "+" and strips leading zeros too.
+            if int(b) >= 0:
+                b = int(b) #removed leading "+" and strips leading zeros too.
+                c = ''
+            else: 
+                b = abs(int(b))
+                c = u"\u207B" # superscript minus sign
             SUP = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
             #SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
             b = str(b).translate(SUP)
-            output = '10' + b    
+            output = '10' + c + b    
     return output
 
 

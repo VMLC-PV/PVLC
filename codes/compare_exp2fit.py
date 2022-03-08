@@ -18,7 +18,8 @@ from run_plot_SIMsalabim import *
 
 def compare_exp2fit():
 
-    path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v425_crack/SimSS')
+    # path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabimv429_Xioyan/SimSS')
+    path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/DDSuite_v409_crack/SIMsalabim')
 
     #### Define experiments to compare to simulation
     ## DT-Y6
@@ -30,11 +31,11 @@ def compare_exp2fit():
     # fixed_str = '-mun_0 7.020E-8 -mup_0 4.315E-8 -kdirect 7.245E-18 -Rseries 3.063E-5 -Rshunt 7.995E-1 -Gehp 1.217E+28 -Etrap 4.774 -Bulk_tr 3.477E+18 -W_R 5.353 -Nc 5.645E+27 -W_L 4.060 -St_R 6.496E+9 -St_L 9.067E+8 -CB 4.04' #Best 1%
 
       
-    # age = 'aged'
-    # pixel = 3
-    # Gfracs = [0,0.008125240951214394, 0.02704509630728539, 0.08851876613458132, 0.26551237818238604, 0.861085219869508,1, 2.051557459849598]
+    age = 'aged'
+    pixel = 3
+    Gfracs = [0,0.008125240951214394, 0.02704509630728539, 0.08851876613458132, 0.26551237818238604, 0.861085219869508,1, 2.051557459849598]
     
-    # fixed_str = '-mun_0 1.107E-7 -mup_0 1.269E-7 -kdirect 3.483E-18 -Rseries 6.487E-5 -Rshunt 6.844E-1 -Gehp 1.412E+28 -Etrap 4.664 -Bulk_tr 4.910E+19 -W_R 5.304 -Nc 5.519E+27 -W_L 4.119 -St_R 6.994E+8 -St_L 1.344E+6 -CB 4.04'
+    fixed_str = '-NP 1000 -mun_0 1.107E-7 -mup_0 1.269E-7 -kdirect 3.483E-18 -Rseries 6.487E-5 -Rshunt 6.844E-1 -Gehp 1.412E+28 -Etrap 4.664 -Bulk_tr 4.910E+19 -W_R 5.304 -Nc 5.519E+27 -W_L 4.119 -St_R 6.994E+8 -St_L 1.344E+6 -CB 4.04 -Vmax 1'
 
     # fixed_str = '-mun_0 7.020E-8 -mup_0 4.315E-8 -kdirect 7.245E-18 -Rseries 6.487E-5 -Rshunt 6.844E-1 -Gehp 1.412E+28 -Etrap 4.774 -Bulk_tr 3.477E+18 -W_R 5.204 -Nc 5.645E+27 -W_L 4.219 -St_R 6.496E+15 -St_L 9.067E+15 -CB 4.04' 
     ## DT-Y6
@@ -81,12 +82,12 @@ def compare_exp2fit():
 
 
     ## Y6-BO-4F
-    ID = 3916
-    age = 'fresh'
-    pixel = 4
-    Gfracs = [0,0.00899285762350159, 0.02958847222355735, 0.09647014717333, 0.2897613119670855, 0.9399050246570602, 1, 2.2396445153662032]
+    # ID = 3916
+    # age = 'fresh'
+    # pixel = 4
+    # Gfracs = [0,0.00899285762350159, 0.02958847222355735, 0.09647014717333, 0.2897613119670855, 0.9399050246570602, 1, 2.2396445153662032]
 
-    fixed_str = '-mun_0 2.442E-8 -mup_0 1.829E-7 -kdirect 7.999E-18 -Rseries 2.652E-5 -Rshunt 1.370 -Gehp 1.326E+28 -Etrap 4.558 -Bulk_tr 6.827E+18 -W_R 5.485 -Nc 5.799E+27 -W_L 4.074 -St_R 1.336E+8 -St_L 9.698E+9 -CB 4.05'
+    # fixed_str = '-mun_0 2.442E-8 -mup_0 1.829E-7 -kdirect 7.999E-18 -Rseries 2.652E-5 -Rshunt 1.370 -Gehp 1.326E+28 -Etrap 4.558 -Bulk_tr 6.827E+18 -W_R 5.485 -Nc 5.799E+27 -W_L 4.074 -St_R 1.336E+8 -St_L 9.698E+9 -CB 4.05'
 
     # pixel = 2
     # Gfracs = [0,0.009009535782328836, 0.029625731507062908, 0.09649315148591558, 0.2897571956906255, 0.9400858561495319,1, 2.238969531299488]

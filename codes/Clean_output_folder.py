@@ -7,7 +7,7 @@
 from VLC_units.cleanup_folder.clean_folder import *
 
 # folder to clean
-folder2clean = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v427/SimSS') 
+folder2clean = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabimv429_Xioyan/SimSS') 
 
 
 clean_up_output('tj',folder2clean)

@@ -64,7 +64,7 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
 
     curr_dir = os.getcwd()              # Current working directory
     if path2SIMsalabim  is None:
-        path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabim_v427/SimSS')                    # Path to SimSS
+        path2SIMsalabim = os.path.join(os.getcwd() , 'Simulation_program/SIMsalabimv429_guide/SimSS')                    # Path to SimSS
                                                                                             # Rerun simulation
 
     ## Prepare strings to run
@@ -92,7 +92,7 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
 
     ## Figures control
     ext_save_pic = '.jpg'
-    size_fig = (10, 8)
+    size_fig = (12,7.5)
     num_fig = 0
     # JV_file plots
     if plot_JVs:
@@ -166,8 +166,8 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
                 data_JVexp = pd.DataFrame()
 
 
-            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.3,1.2],ylimits=[-10,10],pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)))
-            # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=2,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=True,data_JVexp=data_JVexp)
+            SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=0,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=plot_exp,data_JVexp=data_JVexp,xlimits=[-0.5,1.1],ylimits=[-25,10],save_yes=True,pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)))
+            # SIMsalabim_JVs_plot(num_JV_plot,data_JV,plot_type=2,x='Vext',y=['Jext'],colors=colors[idx],labels=labels[idx],legend=False,plot_jvexp=False,data_JVexp=data_JVexp,xlimits=[-0.5,2],ylimits=[1e-4,1e4],save_yes=True,pic_save_name=os.path.join(path2SIMsalabim , str('JV'+ext_save_pic)))
 
         ## Plot Var_file
         if plot_nrj_diag or plot_densities:
@@ -208,5 +208,35 @@ def run_plot_SIMsalabim(fixed_str = None, parameters = None, path2SIMsalabim = N
 
 if __name__ == '__main__':
     
-    run_plot_SIMsalabim()
+    parameters = []
+    parameters.append({'name':'Gfrac','values':list(np.geomspace(1e-3,5,15))})
+    # parameters.append({'name':'Rshunt','values':[-7.995E-1,7.995E-1,7.995E-2,7.995E-3]})
+    # parameters.append({'name':'Rseries','values':[0,3.063E-4,3.063E-3,3.063E-2]})
+    # fixed_strs = ['-Rshunt -7.995E-1','-Rshunt 7.995E-1','-Rshunt 7.995E-2','-Rshunt 7.995E-3']
+    fixed_strs = ['-Rseries 0','-Rseries 3.063E-4','-Rseries 3.063E-3','-Rseries 3.063E-2']
+    colors = plt.cm.viridis(np.linspace(0,1,max(len(fixed_strs),4)+1))
+    count = 0
+    for fix in fixed_strs:
+        JV_files,Var_files,scPars_files=run_plot_SIMsalabim(fixed_str=fix,parameters=parameters,plot_densities=False, plot_nrj_diag=False)
+
+        Voc = []
+
+        for i in scPars_files:
+                perf = pd.read_csv(i,delim_whitespace=True)
+                Voc.append(perf['Voc'])
+            
+        plt.figure(12,figsize=(12,7.5))
+        plt.semilogx(list(np.geomspace(1e-3,5,15)),Voc,color=colors[count])
+        count += 1
+    plt.xlabel('Intensity [suns]')
+    plt.ylabel('V$_{OC}$ [V]')
+
+    # plt.ylabel('FF')
+    plt.xlim([5e-4,5])
+    # plt.ylim([0.5,0.9])
+    plt.ylim([0.35,1.05])
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(os.getcwd() , 'Simulation_program/SIMsalabimv429_guide/SimSS','Voc_Gfrac.png'))
+
     plt.show()

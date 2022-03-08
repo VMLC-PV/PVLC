@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 q = constants.value(u'elementary charge')
 eps_0 = constants.value(u'electric constant')
 kb = constants.value(u'Boltzmann constant in eV/K')
-
+k = constants.value(u'Boltzmann constant')
 #############################################################
 ################ SCLC analysis functions ####################
 #############################################################
@@ -139,7 +139,86 @@ def log_slope(x,y):
     slopef = deriv(log_xf,log_yf)
     return np.asarray(slopef)
 
-def calc_vnet_with_ions(ions,traps,L,eps_r):
+def calc_Vsat(L,Nc,phi,eps_r,T):
+    """ Calculate Vsat for SCLC measurement 
+    as defined in equation (15) in https://doi.org/10.1021/acsenergylett.0c02599
+
+    Vsat = (8/9) * ((q*Nc*L**2)/(eps_0*eps_r))*exp(-q*phi/k*T)
+
+    Parameters
+    ----------
+    L : float
+        Thickness (m)
+    Nc : float
+        Effective density of states (m^-3)
+    phi : float
+        Injection barrier (V)
+    eps_r : float
+        Relative dielectric constant
+    T : float
+        Temperature (K)
+
+    Returns
+    -------
+    float
+        returns Vsat as defined in 
+    """    
+    Vsat = (8/9) * ((q*Nc*L**2)/(eps_0*eps_r))*np.exp(-(q*phi)/(k*T))
+    return Vsat
+
+    
+
+def calc_Vtfl(traps,L,eps_r):
+    """Calculate VTFL for SCLC measurement 
+    as defined in equation (2) in ACS Energy Lett. 2021, 6, 3, 1087–1094
+    https://doi.org/10.1021/acsenergylett.0c02599
+
+    Vnet = q * n_traps * L**2 /( 2 * eps_0 * eps_r) 
+
+    Parameters
+    ----------
+    traps : float
+        Trap density (m^-3)
+    L : float
+        Thickness (m)
+    eps_r : float
+        Relative dielectric constant
+
+    Returns
+    -------
+    float
+        returns vnet as defined in 
+    """    
+    vtfl = q * (traps) * L**2 /( 2 * eps_0 * eps_r)
+    return vtfl
+
+def calc_trap_charge(Vnet,L,eps_r):
+    """Calculate the trap charges for SCLC measurement
+    as defined in equation (2) in ACS Energy Lett. 2021, 6, 3, 1087–1094
+    https://doi.org/10.1021/acsenergylett.0c02599
+
+    Vnet = q * n_trap * L**2 /( 2 * eps_0 * eps_r) 
+
+    Note that if there are not ions or dopant n_net = traps
+
+    Parameters
+    ----------
+    Vtfl : float
+        Vtfl see ref
+    L : float
+        Thickness (m)
+    eps_r : float
+        Relative dielectric constant
+
+    Returns
+    -------
+    float
+        trapped charges in the bulk
+    """    
+    n_trap = Vtfl * ( 2 * eps_0 * eps_r)/ (q * L**2)
+    return n_trap # m^-3
+
+def calc_Vnet_with_ions(ions,traps,L,eps_r):
     """Calculate Vnet for SCLC measurement in the presence of Ions
     as defined in equation (4) in ACS Energy Lett. 2021, 6, 3, 1087–1094
     https://doi.org/10.1021/acsenergylett.0c02599
@@ -191,14 +270,54 @@ def calc_net_charge(Vnet,L,eps_r):
     net_charge= Vnet * ( 2 * eps_0 * eps_r)/ (q * L**2)
     return net_charge # m^-3
 
+def calc_nt_min(L,eps_r,T):
+    """Calculate the minimum appearant trap density for SCLC measurement
+    as defined in equation (3) in ACS Energy Lett. 2021, 6, 3, 1087–1094
+    https://doi.org/10.1021/acsenergylett.0c02599
+
+    Ntmin = 4*np.Pi()**2*((k*T)/(q**2))*((eps_0*eps_r)/(L**2))
+
+    Parameters
+    ----------
+    L : float
+        Thickness (m)
+    eps_r : float
+        Relative dielectric constant
+    T : float
+        Temperature (K)
+
+    Returns
+    -------
+    float
+        minimum appearant trap density
+    """    
+    Ntmin = 4*np.pi**2*((k*T)/(q**2))*((eps_0*eps_r)/(L**2))
+    return Ntmin # m^-3
+
+
 def SCLC_get_data_plot(volt,curr):
     # Get loglog graph slopes and JV without 0V
+    if 0 in volt:
+        idx_0 = volt.index(0)
+        volt = volt.pop(idx_0)
+        curr = curr.pop(idx_0)
+        
+    
+    volt = np.asarray(volt)
+    curr = np.asarray(curr)
+    
+    # remove first offset_noise points in case it is noisy
+    offset_noise = 0
+    volt = volt[offset_noise:]
+    curr = curr[offset_noise:]
+    
     slopesf = log_slope(volt,curr)
     V_slopef = np.asarray(volt)
     J_slopef = np.asarray(curr)
 
     # Get max slope if max slopes > 2.2
-    idx_maxf = np.argmax(slopesf[4:]) # remove first 4 points in case it is noisy
+    
+    idx_maxf = np.argmax(slopesf) 
     max_slopesf = slopesf[idx_maxf]
     if max_slopesf>2.0:
         get_tangentf = 1
@@ -324,8 +443,9 @@ def Make_SCLC_plot(num_fig,data_JV,x='Vext',y=['Jext'],show_tangent=[1,2,3],xlim
 
     # Get tangent and crossing point data
     if show_tangent != []:
-        V_slopef,J_slopef,slopesf,get_tangentf,idx_maxf,max_slopesf,tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f,Vinf,Jinf = SCLC_get_data_plot(data_JV['Vext'],data_JV['Jext'])
-                    
+        V_slopef,J_slopef,slopesf,get_tangentf,idx_maxf,max_slopesf,tang_val_V1f,tang_val_V2f,tang_val_V3f,V1f,J1f,V2f,J2f,Vinf,Jinf = SCLC_get_data_plot(np.asarray(data_JV['Vext']),np.asarray(data_JV['Jext']))
+    else :
+        get_tangentf = False                
     if len(y) > len(line_type):
         print('Invalid line_type list, we meed len(y) == len(line_type)')
         print('We will use default line type instead')
@@ -337,20 +457,20 @@ def Make_SCLC_plot(num_fig,data_JV,x='Vext',y=['Jext'],show_tangent=[1,2,3],xlim
     ax_JVs_plot = plt.axes()
     for i,line in zip(y,line_type):
         if plot_type == 1:
-            ax_JVs_plot.semilogx(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            ax_JVs_plot.semilogx(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
             if plot_jvexp:
-                ax_JVs_plot.semilogx(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+                ax_JVs_plot.semilogx(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
             
         
         elif plot_type == 2:
-            ax_JVs_plot.semilogy(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)   
+            ax_JVs_plot.semilogy(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)   
             if plot_jvexp:
-                ax_JVs_plot.semilogy(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+                ax_JVs_plot.semilogy(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
             
         elif plot_type == 3:
-            ax_JVs_plot.loglog(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            ax_JVs_plot.loglog(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
             if plot_jvexp:
-                ax_JVs_plot.loglog(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+                ax_JVs_plot.loglog(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
             
             if get_tangentf:
                 print('Plotting tangents and crossing points')
@@ -361,15 +481,16 @@ def Make_SCLC_plot(num_fig,data_JV,x='Vext',y=['Jext'],show_tangent=[1,2,3],xlim
                 if 3 in show_tangent:
                     ax_JVs_plot.loglog(V_slopef,tang_val_V3f/10,color=colors,linestyle=line)
                 if 1 in show_tangent and 2 in show_tangent:
-                    ax_JVs_plot.loglog(V1f,J1f/10,'rs',markersize=10)
+                    ax_JVs_plot.loglog(V1f,J1f/10,'rs',markersize=15)
                 if 2 in show_tangent and 3 in show_tangent:
-                    ax_JVs_plot.loglog(V2f,J2f/10,'mo',markersize=10)
-                ax_JVs_plot.loglog(Vinf,Jinf/10,'bo',markersize=10)
+                    ax_JVs_plot.loglog(V2f,J2f/10,'m^',markersize=15)
+                if 2 in show_tangent:
+                    ax_JVs_plot.loglog(Vinf,Jinf/10,'bo',markersize=15)
             
         else:
-            ax_JVs_plot.plot(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+            ax_JVs_plot.plot(data_JV['Vext'],data_JV[i]/10,color=colors,label=labels,linestyle=line,marker=mark,markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
             if plot_jvexp:
-                ax_JVs_plot.plot(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=10,markerfacecolor='None',markeredgewidth = 3)
+                ax_JVs_plot.plot(data_JVexp['V'],data_JVexp['J']/10,'o',markeredgecolor=colors,markersize=15,markerfacecolor='None',markeredgewidth = 3)
         
     
     # legend

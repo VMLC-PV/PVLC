@@ -61,6 +61,7 @@ def run_code(name_prog,path2prog,str2run='',show_term_output=False,verbose=False
         if not os.path.isfile(path2prog+'\\'+name_prog.lower()+'.exe'):
             fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=verbose)
     else : 
+        # cmd_list = './'+name_prog+' ' + str2run
         cmd_list = './'+name_prog.lower()+' ' + str2run
         if not os.path.isfile('./'+path2prog+'\\'+name_prog.lower()):
             fpc_prog(name_prog,path2prog,show_term_output=False,force_fpc=False,verbose=verbose)

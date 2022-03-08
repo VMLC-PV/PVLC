@@ -20,7 +20,7 @@ from VLC_units.useful_functions.aux_func import *
 from VLC_units.SCLC.SCLC_func import *
 
 # Main Program
-def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = True, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'JV_Hyst',clean_output = False,verbose = True):  
+def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = False, plot_tjs = True, move_ouput_2_folder = True, Store_folder = 'JV_Hyst',clean_output = False,verbose = True):  
     """Run single JV sweep simulation using ZimT
 
     Parameters
@@ -60,7 +60,7 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
 
     curr_dir = os.getcwd()              # Current working directory
     if path2ZimT is None:
-        path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabim_v427_sclc/ZimT')                  # Path to ZimT in curr_dir
+        path2ZimT = os.path.join(os.getcwd(),'Simulation_program/SIMsalabimv429_SCLC/ZimT')                  # Path to ZimT in curr_dir
 
  
     ## Physics constants
@@ -188,15 +188,17 @@ def JV_Hyst(fixed_str = None, input_dic = None, path2ZimT = None, run_simu = Tru
         clean_up_output('tj',os.path.join(path2ZimT,Store_folder))
         clean_up_output('tVG',os.path.join(path2ZimT,Store_folder))
         print('Ouput data was deleted from '+os.path.join(path2ZimT,Store_folder))
+    
+    # plt.close()
 
     print('Elapsed time {:.2f} s'.format(time() - start)) # Time in seconds
 if __name__ == '__main__':
-    str_lst = ['-grad 10 -NP 1000 -Bulk_tr 1.5e22 -CNI 5e21 -CPI 5e21 -accDens 0.1 -tolJ 1e-2']#,'-grad 10 -NP 1000 -Bulk_tr 1e22 ','-grad 10 -NP 1000 -Bulk_tr 7e21','-grad 10 -NP 1000 -CNI 1e21 -CPI 1e21']
-    store_folder_lst = ['SCLC_trap_1.5e22_ion_5e21']#,'SCLC_trap_1e22_ion_2e21','SCLC_trap_7e21_ion_2e21','SCLC_trap_1e22_ion_1e21']
+    str_lst = ['-grad 10 -NP 1000 -Bulk_tr 1e22 ','-grad 10 -NP 1000 -Bulk_tr 7e21','-grad 10 -NP 1000 -CNI 1e21 -CPI 1e21'] # '-grad 10 -NP 1000 -Bulk_tr 1.5e22 -CNI 5e21 -CPI 5e21 -accDens 0.1 -tolJ 1e-2'
+    store_folder_lst = ['SCLC_trap_1e22_ion_2e21','SCLC_trap_7e21_ion_2e21','SCLC_trap_1e22_ion_1e21'] #'SCLC_trap_1.5e22_ion_5e21',
     for i,j in zip(str_lst,store_folder_lst):
-        JV_Hyst(fixed_str = i,Store_folder=j,run_simu = True)
-        # plt.close('all')
-    plt.show()
+        JV_Hyst(fixed_str = i,Store_folder=j,run_simu = False)
+        plt.close('all')
+    # plt.show()
     
     
     
